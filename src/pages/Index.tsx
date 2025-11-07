@@ -8,11 +8,19 @@ export type Person = {
   name: string;
   target: number;
   current: number;
+  appeals: Appeal[];
+};
+
+export type Appeal = {
+  id: string;
+  timestamp: string;
+  reviewTime: number; // tiempo en minutos
 };
 
 export type DayState = {
   totalAPPs: number;
   people: Person[];
+  startTime: string;
 };
 
 const Index = () => {
@@ -31,12 +39,14 @@ const Index = () => {
         name,
         target,
         current: 0,
+        appeals: [],
       };
     });
 
     setDayState({
       totalAPPs,
       people: peopleData,
+      startTime: new Date().toISOString(),
     });
     setView("tracker");
   };
@@ -53,6 +63,29 @@ const Index = () => {
               current: increment
                 ? Math.min(person.current + 1, person.target)
                 : Math.max(person.current - 1, 0),
+            }
+          : person
+      ),
+    });
+  };
+
+  const handleAddAppeal = (name: string, reviewTime: number) => {
+    if (!dayState) return;
+
+    setDayState({
+      ...dayState,
+      people: dayState.people.map((person) =>
+        person.name === name
+          ? {
+              ...person,
+              appeals: [
+                ...person.appeals,
+                {
+                  id: crypto.randomUUID(),
+                  timestamp: new Date().toISOString(),
+                  reviewTime,
+                },
+              ],
             }
           : person
       ),
@@ -76,6 +109,7 @@ const Index = () => {
     });
 
     setDayState({
+      ...dayState,
       totalAPPs: newTotalAPPs,
       people: updatedPeople,
     });
@@ -117,6 +151,7 @@ const Index = () => {
       name,
       target: newPersonTarget,
       current: 0,
+      appeals: [],
     });
 
     setDayState({
@@ -190,6 +225,7 @@ const Index = () => {
             onAddMoreAPPs={handleAddMoreAPPs}
             onAddPerson={handleAddPerson}
             onRemovePerson={handleRemovePerson}
+            onAddAppeal={handleAddAppeal}
             onReset={handleReset}
             onError={showError}
           />

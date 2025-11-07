@@ -4,8 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PersonProgress } from "./PersonProgress";
-import { RotateCcw, Plus } from "lucide-react";
+import { AppealsStats } from "./AppealsStats";
+import { RotateCcw, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import type { DayState } from "@/pages/Index";
+import { useToast } from "@/hooks/use-toast";
 
 interface TrackerViewProps {
   dayState: DayState;
@@ -13,6 +15,7 @@ interface TrackerViewProps {
   onAddMoreAPPs: (additionalAPPs: number) => void;
   onAddPerson: (name: string) => void;
   onRemovePerson: (name: string) => void;
+  onAddAppeal: (name: string, reviewTime: number) => void;
   onReset: () => void;
   onError: (message: string) => void;
 }
@@ -23,11 +26,14 @@ export const TrackerView = ({
   onAddMoreAPPs,
   onAddPerson,
   onRemovePerson,
+  onAddAppeal,
   onReset,
   onError,
 }: TrackerViewProps) => {
   const [additionalAPPs, setAdditionalAPPs] = useState<string>("");
   const [newPersonName, setNewPersonName] = useState<string>("");
+  const [showAppealsStats, setShowAppealsStats] = useState(false);
+  const { toast } = useToast();
   
   const totalDone = dayState.people.reduce((sum, p) => sum + p.current, 0);
   const totalTarget = dayState.people.reduce((sum, p) => sum + p.target, 0);
@@ -55,6 +61,54 @@ export const TrackerView = ({
 
     onAddPerson(name);
     setNewPersonName("");
+  };
+
+  const handleExportToSheets = async (webhookUrl: string) => {
+    try {
+      const exportData = {
+        date: new Date().toISOString(),
+        startTime: dayState.startTime,
+        totalAPPs: dayState.totalAPPs,
+        completed: totalDone,
+        people: dayState.people.map((person) => ({
+          name: person.name,
+          appsCompleted: person.current,
+          appsTarget: person.target,
+          appeals: person.appeals.length,
+          avgReviewTime: person.appeals.length > 0
+            ? Math.round(
+                person.appeals.reduce((sum, a) => sum + a.reviewTime, 0) /
+                  person.appeals.length
+              )
+            : 0,
+          appealsList: person.appeals.map((a) => ({
+            timestamp: a.timestamp,
+            reviewTime: a.reviewTime,
+          })),
+        })),
+      };
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: "no-cors",
+        body: JSON.stringify(exportData),
+      });
+
+      toast({
+        title: "Datos enviados",
+        description: "Los datos fueron enviados a Google Sheets. Verifica tu hoja de cálculo.",
+      });
+    } catch (error) {
+      console.error("Error exporting to sheets:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar los datos. Verifica la URL del webhook.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleReset = () => {
@@ -171,6 +225,28 @@ export const TrackerView = ({
         </div>
       </div>
 
+      {/* Appeals Stats Toggle */}
+      <Button
+        onClick={() => setShowAppealsStats(!showAppealsStats)}
+        variant="outline"
+        className="w-full mb-4 gap-2"
+      >
+        {showAppealsStats ? (
+          <ChevronUp className="w-4 h-4" />
+        ) : (
+          <ChevronDown className="w-4 h-4" />
+        )}
+        {showAppealsStats ? "Ocultar" : "Ver"} Estadísticas de Appeals
+      </Button>
+
+      {/* Appeals Stats */}
+      {showAppealsStats && (
+        <AppealsStats
+          dayState={dayState}
+          onExportToSheets={handleExportToSheets}
+        />
+      )}
+
       {/* Individual Progress */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground mb-2">
@@ -183,6 +259,7 @@ export const TrackerView = ({
             onIncrement={() => onUpdateProgress(person.name, true)}
             onDecrement={() => onUpdateProgress(person.name, false)}
             onRemove={() => onRemovePerson(person.name)}
+            onAddAppeal={(reviewTime) => onAddAppeal(person.name, reviewTime)}
             canRemove={dayState.people.length > 1}
           />
         ))}
