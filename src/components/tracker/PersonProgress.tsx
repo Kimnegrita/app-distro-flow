@@ -1,18 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import type { Person } from "@/pages/Index";
 
 interface PersonProgressProps {
   person: Person;
   onIncrement: () => void;
   onDecrement: () => void;
+  onRemove: () => void;
+  canRemove: boolean;
 }
 
 export const PersonProgress = ({
   person,
   onIncrement,
   onDecrement,
+  onRemove,
+  canRemove,
 }: PersonProgressProps) => {
   const progressPercent =
     person.target > 0 ? (person.current / person.target) * 100 : 0;
@@ -27,13 +31,26 @@ export const PersonProgress = ({
       }`}
     >
       <div className="flex justify-between items-center mb-3">
-        <span
-          className={`text-lg font-semibold ${
-            isComplete ? "text-success" : "text-foreground"
-          }`}
-        >
-          {person.name}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-lg font-semibold ${
+              isComplete ? "text-success" : "text-foreground"
+            }`}
+          >
+            {person.name}
+          </span>
+          {canRemove && (
+            <Button
+              onClick={onRemove}
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              title="Remover participante"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <Button
             onClick={onDecrement}

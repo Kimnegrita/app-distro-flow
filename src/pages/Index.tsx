@@ -81,6 +81,90 @@ const Index = () => {
     });
   };
 
+  const handleAddPerson = (name: string) => {
+    if (!dayState) return;
+
+    // Verificar si la persona ya existe
+    if (dayState.people.some(p => p.name === name)) {
+      showError(`La persona "${name}" ya está en la lista.`);
+      return;
+    }
+
+    // Calcular total completado actual
+    const totalCompleted = dayState.people.reduce((sum, p) => sum + p.current, 0);
+    
+    // Calcular APPs pendientes
+    const pendingAPPs = dayState.totalAPPs - totalCompleted;
+    
+    // Nueva cantidad de personas
+    const newTotalPersonas = dayState.people.length + 1;
+    
+    // Redistribuir solo las APPs pendientes entre todos (incluyendo el nuevo)
+    const appsBase = Math.floor(pendingAPPs / newTotalPersonas);
+    const sobrantes = pendingAPPs % newTotalPersonas;
+
+    const updatedPeople: Person[] = dayState.people.map((person, index) => {
+      const newPendingTarget = appsBase + (index < sobrantes ? 1 : 0);
+      return {
+        ...person,
+        target: person.current + newPendingTarget,
+      };
+    });
+
+    // Agregar nueva persona
+    const newPersonTarget = appsBase + (dayState.people.length < sobrantes ? 1 : 0);
+    updatedPeople.push({
+      name,
+      target: newPersonTarget,
+      current: 0,
+    });
+
+    setDayState({
+      ...dayState,
+      people: updatedPeople,
+    });
+  };
+
+  const handleRemovePerson = (name: string) => {
+    if (!dayState || dayState.people.length <= 1) {
+      showError("Debe haber al menos una persona en la jornada.");
+      return;
+    }
+
+    const personToRemove = dayState.people.find(p => p.name === name);
+    if (!personToRemove) return;
+
+    // APPs pendientes de la persona a eliminar
+    const pendingFromRemoved = Math.max(0, personToRemove.target - personToRemove.current);
+    
+    // Filtrar la persona eliminada
+    const remainingPeople = dayState.people.filter(p => p.name !== name);
+    
+    // Calcular total completado de los que quedan
+    const totalCompleted = remainingPeople.reduce((sum, p) => sum + p.current, 0);
+    
+    // Total pendiente = pendiente original de todos + pendiente del eliminado
+    const totalPending = (dayState.totalAPPs - totalCompleted - personToRemove.current) + pendingFromRemoved;
+    
+    // Redistribuir las APPs pendientes entre los restantes
+    const newTotalPersonas = remainingPeople.length;
+    const appsBase = Math.floor(totalPending / newTotalPersonas);
+    const sobrantes = totalPending % newTotalPersonas;
+
+    const updatedPeople: Person[] = remainingPeople.map((person, index) => {
+      const newPendingTarget = appsBase + (index < sobrantes ? 1 : 0);
+      return {
+        ...person,
+        target: person.current + newPendingTarget,
+      };
+    });
+
+    setDayState({
+      ...dayState,
+      people: updatedPeople,
+    });
+  };
+
   const handleReset = () => {
     setDayState(null);
     setView("setup");
@@ -104,6 +188,8 @@ const Index = () => {
             dayState={dayState}
             onUpdateProgress={handleUpdateProgress}
             onAddMoreAPPs={handleAddMoreAPPs}
+            onAddPerson={handleAddPerson}
+            onRemovePerson={handleRemovePerson}
             onReset={handleReset}
             onError={showError}
           />

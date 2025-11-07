@@ -11,6 +11,8 @@ interface TrackerViewProps {
   dayState: DayState;
   onUpdateProgress: (name: string, increment: boolean) => void;
   onAddMoreAPPs: (additionalAPPs: number) => void;
+  onAddPerson: (name: string) => void;
+  onRemovePerson: (name: string) => void;
   onReset: () => void;
   onError: (message: string) => void;
 }
@@ -19,10 +21,13 @@ export const TrackerView = ({
   dayState,
   onUpdateProgress,
   onAddMoreAPPs,
+  onAddPerson,
+  onRemovePerson,
   onReset,
   onError,
 }: TrackerViewProps) => {
   const [additionalAPPs, setAdditionalAPPs] = useState<string>("");
+  const [newPersonName, setNewPersonName] = useState<string>("");
   
   const totalDone = dayState.people.reduce((sum, p) => sum + p.current, 0);
   const totalTarget = dayState.people.reduce((sum, p) => sum + p.target, 0);
@@ -38,6 +43,18 @@ export const TrackerView = ({
 
     onAddMoreAPPs(appsToAdd);
     setAdditionalAPPs("");
+  };
+
+  const handleAddPerson = () => {
+    const name = newPersonName.trim();
+    
+    if (!name) {
+      onError("Por favor, insira um nome válido.");
+      return;
+    }
+
+    onAddPerson(name);
+    setNewPersonName("");
   };
 
   const handleReset = () => {
@@ -100,7 +117,7 @@ export const TrackerView = ({
       </div>
 
       {/* Add More APPs */}
-      <div className="bg-muted/50 rounded-xl p-4 mb-6 border border-border">
+      <div className="bg-muted/50 rounded-xl p-4 mb-4 border border-border">
         <Label htmlFor="additionalAPPs" className="text-sm font-medium mb-2 block">
           Adicionar mais APPs à fila
         </Label>
@@ -124,6 +141,36 @@ export const TrackerView = ({
         </div>
       </div>
 
+      {/* Add Person */}
+      <div className="bg-muted/50 rounded-xl p-4 mb-6 border border-border">
+        <Label htmlFor="newPersonName" className="text-sm font-medium mb-2 block">
+          Adicionar novo participante
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            id="newPersonName"
+            type="text"
+            value={newPersonName}
+            onChange={(e) => setNewPersonName(e.target.value)}
+            placeholder="Nome da pessoa"
+            className="flex-1"
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddPerson();
+              }
+            }}
+          />
+          <Button
+            onClick={handleAddPerson}
+            className="shrink-0 bg-primary hover:bg-primary/90 gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Adicionar
+          </Button>
+        </div>
+      </div>
+
       {/* Individual Progress */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground mb-2">
@@ -135,6 +182,8 @@ export const TrackerView = ({
             person={person}
             onIncrement={() => onUpdateProgress(person.name, true)}
             onDecrement={() => onUpdateProgress(person.name, false)}
+            onRemove={() => onRemovePerson(person.name)}
+            canRemove={dayState.people.length > 1}
           />
         ))}
       </div>
