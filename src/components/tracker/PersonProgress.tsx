@@ -1,10 +1,6 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Minus, Plus, Trash2, AlertCircle } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import type { Person } from "@/pages/Index";
 
 interface PersonProgressProps {
@@ -12,7 +8,6 @@ interface PersonProgressProps {
   onIncrement: () => void;
   onDecrement: () => void;
   onRemove: () => void;
-  onAddAppeal: (reviewTime: number) => void;
   canRemove: boolean;
 }
 
@@ -21,24 +16,11 @@ export const PersonProgress = ({
   onIncrement,
   onDecrement,
   onRemove,
-  onAddAppeal,
   canRemove,
 }: PersonProgressProps) => {
-  const [reviewTime, setReviewTime] = useState<string>("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   const progressPercent =
     person.target > 0 ? (person.current / person.target) * 100 : 0;
   const isComplete = person.current >= person.target;
-
-  const handleAddAppeal = () => {
-    const time = parseInt(reviewTime);
-    if (!isNaN(time) && time > 0) {
-      onAddAppeal(time);
-      setReviewTime("");
-      setIsDialogOpen(false);
-    }
-  };
 
   return (
     <Card
@@ -57,48 +39,6 @@ export const PersonProgress = ({
           >
             {person.name}
           </span>
-          {person.appeals.length > 0 && (
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-              {person.appeals.length} appeals
-            </span>
-          )}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                title="Registrar appeal"
-              >
-                <AlertCircle className="w-4 h-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar Appeal - {person.name}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reviewTime">Tiempo de revisión (minutos)</Label>
-                  <Input
-                    id="reviewTime"
-                    type="number"
-                    min="1"
-                    value={reviewTime}
-                    onChange={(e) => setReviewTime(e.target.value)}
-                    placeholder="Ej: 15"
-                  />
-                </div>
-                <Button
-                  onClick={handleAddAppeal}
-                  disabled={!reviewTime || parseInt(reviewTime) <= 0}
-                  className="w-full"
-                >
-                  Registrar Appeal
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
           {canRemove && (
             <Button
               onClick={onRemove}
