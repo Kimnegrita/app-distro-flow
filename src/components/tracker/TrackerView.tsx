@@ -33,7 +33,7 @@ export const TrackerView = ({
     <Card className="p-6 shadow-xl">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Monitor de APPs</h1>
+        <h1 className="text-2xl font-bold text-foreground">Distribuidor de APPs</h1>
         <Button
           onClick={handleReset}
           variant="destructive"
