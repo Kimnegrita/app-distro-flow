@@ -1,23 +1,44 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PersonProgress } from "./PersonProgress";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Plus } from "lucide-react";
 import type { DayState } from "@/pages/Index";
 
 interface TrackerViewProps {
   dayState: DayState;
   onUpdateProgress: (name: string, increment: boolean) => void;
+  onAddMoreAPPs: (additionalAPPs: number) => void;
   onReset: () => void;
+  onError: (message: string) => void;
 }
 
 export const TrackerView = ({
   dayState,
   onUpdateProgress,
+  onAddMoreAPPs,
   onReset,
+  onError,
 }: TrackerViewProps) => {
+  const [additionalAPPs, setAdditionalAPPs] = useState<string>("");
+  
   const totalDone = dayState.people.reduce((sum, p) => sum + p.current, 0);
   const totalTarget = dayState.people.reduce((sum, p) => sum + p.target, 0);
   const totalPending = Math.max(0, totalTarget - totalDone);
+
+  const handleAddAPPs = () => {
+    const appsToAdd = parseInt(additionalAPPs);
+    
+    if (isNaN(appsToAdd) || appsToAdd <= 0) {
+      onError("Por favor, insira um número válido de APPs para adicionar.");
+      return;
+    }
+
+    onAddMoreAPPs(appsToAdd);
+    setAdditionalAPPs("");
+  };
 
   const handleReset = () => {
     if (
@@ -75,6 +96,31 @@ export const TrackerView = ({
               {totalPending}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Add More APPs */}
+      <div className="bg-muted/50 rounded-xl p-4 mb-6 border border-border">
+        <Label htmlFor="additionalAPPs" className="text-sm font-medium mb-2 block">
+          Adicionar mais APPs à fila
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            id="additionalAPPs"
+            type="number"
+            min="1"
+            value={additionalAPPs}
+            onChange={(e) => setAdditionalAPPs(e.target.value)}
+            placeholder="Ex: 20"
+            className="flex-1"
+          />
+          <Button
+            onClick={handleAddAPPs}
+            className="shrink-0 bg-primary hover:bg-primary/90 gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Adicionar
+          </Button>
         </div>
       </div>
 

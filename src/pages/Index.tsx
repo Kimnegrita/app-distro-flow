@@ -59,6 +59,28 @@ const Index = () => {
     });
   };
 
+  const handleAddMoreAPPs = (additionalAPPs: number) => {
+    if (!dayState) return;
+
+    const newTotalAPPs = dayState.totalAPPs + additionalAPPs;
+    const totalPersonas = dayState.people.length;
+    const appsBase = Math.floor(newTotalAPPs / totalPersonas);
+    const sobrantes = newTotalAPPs % totalPersonas;
+
+    const updatedPeople: Person[] = dayState.people.map((person, index) => {
+      const newTarget = appsBase + (index < sobrantes ? 1 : 0);
+      return {
+        ...person,
+        target: newTarget,
+      };
+    });
+
+    setDayState({
+      totalAPPs: newTotalAPPs,
+      people: updatedPeople,
+    });
+  };
+
   const handleReset = () => {
     setDayState(null);
     setView("setup");
@@ -81,7 +103,9 @@ const Index = () => {
           <TrackerView
             dayState={dayState}
             onUpdateProgress={handleUpdateProgress}
+            onAddMoreAPPs={handleAddMoreAPPs}
             onReset={handleReset}
+            onError={showError}
           />
         )}
       </div>
