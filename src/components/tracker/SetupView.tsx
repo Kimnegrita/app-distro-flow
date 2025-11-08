@@ -18,11 +18,21 @@ interface SetupViewProps {
 }
 
 const DEFAULT_TEAM_MEMBERS = [
-  "Ana Silva",
-  "Carlos Santos",
-  "Maria Oliveira",
-  "João Costa",
-  "Sofia Ferreira"
+  "Pedro Martins",
+  "Inês Correia",
+  "Henrique da Silva",
+  "Rafael Videira",
+  "Daiane Tavares",
+  "Valentina Morales",
+  "Kimberly Delgado",
+  "Renata Prates",
+  "Alvaro Zanoni",
+  "Miguel Afonso",
+  "Ana Andresson",
+  "Beatriz Batista",
+  "Maria Inês Gamas Ferreira",
+  "Rúdi Santos",
+  "João Faria"
 ];
 
 export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
