@@ -4,30 +4,36 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PersonProgress } from "./PersonProgress";
-import { RotateCcw, Plus } from "lucide-react";
-import type { DayState } from "@/pages/Index";
+import { StatsPanel } from "./StatsPanel";
+import { RotateCcw, Plus, BarChart3 } from "lucide-react";
+import type { DayState, WeeklyData } from "@/pages/Index";
 
 interface TrackerViewProps {
   dayState: DayState;
+  weeklyData: WeeklyData;
   onUpdateProgress: (name: string, increment: boolean) => void;
   onAddMoreAPPs: (additionalAPPs: number) => void;
   onAddPerson: (name: string) => void;
   onRemovePerson: (name: string) => void;
+  onAddAppeal: (name: string, reviewTime: number) => void;
   onReset: () => void;
   onError: (message: string) => void;
 }
 
 export const TrackerView = ({
   dayState,
+  weeklyData,
   onUpdateProgress,
   onAddMoreAPPs,
   onAddPerson,
   onRemovePerson,
+  onAddAppeal,
   onReset,
   onError,
 }: TrackerViewProps) => {
   const [additionalAPPs, setAdditionalAPPs] = useState<string>("");
   const [newPersonName, setNewPersonName] = useState<string>("");
+  const [showStats, setShowStats] = useState(false);
   
   const totalDone = dayState.people.reduce((sum, p) => sum + p.current, 0);
   const totalTarget = dayState.people.reduce((sum, p) => sum + p.target, 0);
@@ -72,15 +78,26 @@ export const TrackerView = ({
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-foreground">Distribuidor de APPs</h1>
-        <Button
-          onClick={handleReset}
-          variant="destructive"
-          size="sm"
-          className="gap-2"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Reiniciar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowStats(!showStats)}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <BarChart3 className="w-4 h-4" />
+            {showStats ? "Ocultar" : "Estatísticas"}
+          </Button>
+          <Button
+            onClick={handleReset}
+            variant="destructive"
+            size="sm"
+            className="gap-2"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reiniciar
+          </Button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -171,6 +188,15 @@ export const TrackerView = ({
         </div>
       </div>
 
+      {/* Stats Panel */}
+      {showStats && (
+        <StatsPanel 
+          dayState={dayState}
+          weeklyData={weeklyData}
+          onError={onError}
+        />
+      )}
+
       {/* Individual Progress */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground mb-2">
@@ -182,6 +208,7 @@ export const TrackerView = ({
             person={person}
             onIncrement={() => onUpdateProgress(person.name, true)}
             onDecrement={() => onUpdateProgress(person.name, false)}
+            onAddAppeal={(reviewTime) => onAddAppeal(person.name, reviewTime)}
             onRemove={() => onRemovePerson(person.name)}
             canRemove={dayState.people.length > 1}
           />

@@ -4,40 +4,64 @@ import { SetupView } from "@/components/tracker/SetupView";
 import { TrackerView } from "@/components/tracker/TrackerView";
 import { ErrorModal } from "@/components/tracker/ErrorModal";
 
+export type Appeal = {
+  timestamp: Date;
+  reviewTime: number; // in minutes
+};
+
 export type Person = {
   name: string;
   target: number;
   current: number;
+  appeals: Appeal[];
+  appStartTimes: Date[]; // timestamps when each APP started
 };
 
 export type DayState = {
   totalAPPs: number;
   people: Person[];
+  date: string; // YYYY-MM-DD format
+  startTime: Date;
+};
+
+export type WeeklyData = {
+  [date: string]: DayState;
 };
 
 const Index = () => {
   const [view, setView] = useState<"loading" | "setup" | "tracker">("setup");
   const [dayState, setDayState] = useState<DayState | null>(null);
   const [error, setError] = useState<string>("");
+  const [weeklyData, setWeeklyData] = useState<WeeklyData>(() => {
+    const stored = localStorage.getItem("weeklyData");
+    return stored ? JSON.parse(stored) : {};
+  });
 
   const handleStartDay = (totalAPPs: number, peopleNames: string[]) => {
     const totalPersonas = peopleNames.length;
     const appsBase = Math.floor(totalAPPs / totalPersonas);
     const sobrantes = totalAPPs % totalPersonas;
 
+    const today = new Date().toISOString().split('T')[0];
     const peopleData: Person[] = peopleNames.map((name, index) => {
       const target = appsBase + (index < sobrantes ? 1 : 0);
       return {
         name,
         target,
         current: 0,
+        appeals: [],
+        appStartTimes: [],
       };
     });
 
-    setDayState({
+    const newDayState = {
       totalAPPs,
       people: peopleData,
-    });
+      date: today,
+      startTime: new Date(),
+    };
+
+    setDayState(newDayState);
     setView("tracker");
   };
 
@@ -53,6 +77,9 @@ const Index = () => {
               current: increment
                 ? Math.min(person.current + 1, person.target)
                 : Math.max(person.current - 1, 0),
+              appStartTimes: increment
+                ? [...person.appStartTimes, new Date()]
+                : person.appStartTimes.slice(0, -1),
             }
           : person
       ),
@@ -76,6 +103,7 @@ const Index = () => {
     });
 
     setDayState({
+      ...dayState,
       totalAPPs: newTotalAPPs,
       people: updatedPeople,
     });
@@ -84,22 +112,14 @@ const Index = () => {
   const handleAddPerson = (name: string) => {
     if (!dayState) return;
 
-    // Verificar si la persona ya existe
     if (dayState.people.some(p => p.name === name)) {
       showError(`La persona "${name}" ya está en la lista.`);
       return;
     }
 
-    // Calcular total completado actual
     const totalCompleted = dayState.people.reduce((sum, p) => sum + p.current, 0);
-    
-    // Calcular APPs pendientes
     const pendingAPPs = dayState.totalAPPs - totalCompleted;
-    
-    // Nueva cantidad de personas
     const newTotalPersonas = dayState.people.length + 1;
-    
-    // Redistribuir solo las APPs pendientes entre todos (incluyendo el nuevo)
     const appsBase = Math.floor(pendingAPPs / newTotalPersonas);
     const sobrantes = pendingAPPs % newTotalPersonas;
 
@@ -111,12 +131,13 @@ const Index = () => {
       };
     });
 
-    // Agregar nueva persona
     const newPersonTarget = appsBase + (dayState.people.length < sobrantes ? 1 : 0);
     updatedPeople.push({
       name,
       target: newPersonTarget,
       current: 0,
+      appeals: [],
+      appStartTimes: [],
     });
 
     setDayState({
@@ -165,7 +186,28 @@ const Index = () => {
     });
   };
 
+  const handleAddAppeal = (name: string, reviewTime: number) => {
+    if (!dayState) return;
+
+    setDayState({
+      ...dayState,
+      people: dayState.people.map((person) =>
+        person.name === name
+          ? {
+              ...person,
+              appeals: [...person.appeals, { timestamp: new Date(), reviewTime }],
+            }
+          : person
+      ),
+    });
+  };
+
   const handleReset = () => {
+    if (dayState) {
+      const updatedWeekly = { ...weeklyData, [dayState.date]: dayState };
+      setWeeklyData(updatedWeekly);
+      localStorage.setItem("weeklyData", JSON.stringify(updatedWeekly));
+    }
     setDayState(null);
     setView("setup");
   };
@@ -186,10 +228,12 @@ const Index = () => {
         {view === "tracker" && dayState && (
           <TrackerView
             dayState={dayState}
+            weeklyData={weeklyData}
             onUpdateProgress={handleUpdateProgress}
             onAddMoreAPPs={handleAddMoreAPPs}
             onAddPerson={handleAddPerson}
             onRemovePerson={handleRemovePerson}
+            onAddAppeal={handleAddAppeal}
             onReset={handleReset}
             onError={showError}
           />
