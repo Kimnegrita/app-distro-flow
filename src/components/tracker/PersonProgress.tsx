@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Minus, Plus, Trash2, MessageSquare } from "lucide-react";
-import type { Person } from "@/pages/Index";
+import type { Person } from "@/types/tracker";
 
 interface PersonProgressProps {
   person: Person;

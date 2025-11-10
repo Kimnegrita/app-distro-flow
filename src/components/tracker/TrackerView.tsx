@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { PersonProgress } from "./PersonProgress";
 import { StatsPanel } from "./StatsPanel";
 import { RotateCcw, Plus, BarChart3 } from "lucide-react";
-import type { DayState, WeeklyData } from "@/pages/Index";
+import type { DayState, WeeklyData } from "@/types/tracker";
 
 interface TrackerViewProps {
   dayState: DayState;

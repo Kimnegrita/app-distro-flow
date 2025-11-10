@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 
 interface SetupViewProps {
-  onStartDay: (totalAPPs: number, people: string[]) => void;
+  onStartDay: (totalAPPs: number, peopleData: Array<{ name: string; shift_time: '7am' | '8am' | '9am' }>) => void;
   onError: (message: string) => void;
 }
 
@@ -38,7 +38,8 @@ const DEFAULT_TEAM_MEMBERS = [
 export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
   const [totalAPPs, setTotalAPPs] = useState<string>("");
   const [personName, setPersonName] = useState<string>("");
-  const [peopleList, setPeopleList] = useState<string[]>([]);
+  const [selectedShift, setSelectedShift] = useState<'7am' | '8am' | '9am'>('7am');
+  const [peopleList, setPeopleList] = useState<Array<{ name: string; shift_time: '7am' | '8am' | '9am' }>>([]);
   const [teamMembers, setTeamMembers] = useState<string[]>(() => {
     const stored = localStorage.getItem("teamMembers");
     return stored ? JSON.parse(stored) : DEFAULT_TEAM_MEMBERS;
@@ -54,25 +55,25 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
     const name = personName.trim();
     if (!name) return;
     
-    if (peopleList.includes(name)) {
+    if (peopleList.some(p => p.name === name)) {
       onError(`A pessoa "${name}" já está na lista.`);
       return;
     }
 
-    setPeopleList([...peopleList, name]);
+    setPeopleList([...peopleList, { name, shift_time: selectedShift }]);
     setPersonName("");
   };
 
   const handleRemovePerson = (name: string) => {
-    setPeopleList(peopleList.filter((p) => p !== name));
+    setPeopleList(peopleList.filter((p) => p.name !== name));
   };
 
   const handleSelectMember = (name: string) => {
-    if (peopleList.includes(name)) {
+    if (peopleList.some(p => p.name === name)) {
       onError(`A pessoa "${name}" já está na lista.`);
       return;
     }
-    setPeopleList([...peopleList, name]);
+    setPeopleList([...peopleList, { name, shift_time: selectedShift }]);
   };
 
   const handleAddNewMember = () => {
@@ -91,7 +92,7 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
 
   const handleRemoveMember = (name: string) => {
     setTeamMembers(teamMembers.filter((m) => m !== name));
-    setPeopleList(peopleList.filter((p) => p !== name));
+    setPeopleList(peopleList.filter((p) => p.name !== name));
   };
 
   const handleStartDay = () => {
@@ -208,7 +209,7 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
             </SelectTrigger>
             <SelectContent>
               {teamMembers
-                .filter(member => !peopleList.includes(member))
+                .filter(member => !peopleList.some(p => p.name === member))
                 .map((member) => (
                   <SelectItem key={member} value={member}>
                     {member}
@@ -218,10 +219,27 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
           </Select>
         </div>
 
+        {/* Shift Selection */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
+            Turno de entrada
+          </Label>
+          <Select value={selectedShift} onValueChange={(value: '7am' | '8am' | '9am') => setSelectedShift(value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7am">7:00 AM</SelectItem>
+              <SelectItem value="8am">8:00 AM</SelectItem>
+              <SelectItem value="9am">9:00 AM</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Add Person Manually */}
         <div className="space-y-2">
           <Label htmlFor="personName" className="text-sm font-medium">
-            Ou adicionar manualmente
+            Adicionar pessoa ao turno {selectedShift}
           </Label>
           <div className="flex gap-2">
             <Input
@@ -250,22 +268,32 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
               Pessoas em turno:
             </h3>
             <div className="space-y-2">
-              {peopleList.map((person) => (
-                <div
-                  key={person}
-                  className="flex items-center justify-between p-3 bg-accent rounded-lg"
-                >
-                  <span className="font-medium text-foreground">{person}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemovePerson(person)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
+              {['7am', '8am', '9am'].map(shift => {
+                const shiftPeople = peopleList.filter(p => p.shift_time === shift);
+                if (shiftPeople.length === 0) return null;
+                
+                return (
+                  <div key={shift} className="space-y-1">
+                    <p className="text-xs font-semibold text-primary uppercase">{shift}</p>
+                    {shiftPeople.map((person) => (
+                      <div
+                        key={person.name}
+                        className="flex items-center justify-between p-3 bg-accent rounded-lg"
+                      >
+                        <span className="font-medium text-foreground">{person.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemovePerson(person.name)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

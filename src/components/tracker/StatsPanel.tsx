@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import type { DayState, WeeklyData } from "@/pages/Index";
+import type { DayState, WeeklyData } from "@/types/tracker";
 
 interface StatsPanelProps {
   dayState: DayState;

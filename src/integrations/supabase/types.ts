@@ -14,7 +14,106 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appeals: {
+        Row: {
+          created_at: string
+          id: string
+          person_id: string
+          review_time: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          person_id: string
+          review_time: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          person_id?: string
+          review_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appeals_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "session_people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      day_sessions: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_active: boolean
+          started_at: string
+          total_apps: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_active?: boolean
+          started_at?: string
+          total_apps: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_active?: boolean
+          started_at?: string
+          total_apps?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      session_people: {
+        Row: {
+          assigned_apps: number
+          created_at: string
+          current_progress: number
+          id: string
+          name: string
+          session_id: string
+          shift_time: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_apps: number
+          created_at?: string
+          current_progress?: number
+          id?: string
+          name: string
+          session_id: string
+          shift_time: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_apps?: number
+          created_at?: string
+          current_progress?: number
+          id?: string
+          name?: string
+          session_id?: string
+          shift_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_people_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "day_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
