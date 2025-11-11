@@ -20,7 +20,7 @@ interface SetupViewProps {
 const DEFAULT_TEAM_MEMBERS = [
   "Pedro Martins",
   "Inês Correia",
-  "Henrique da Silva",
+  "Henrique Machado da Silva",
   "Rafael Videira",
   "Daiane Tavares",
   "Valentina Morales",
