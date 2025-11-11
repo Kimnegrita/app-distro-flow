@@ -427,6 +427,62 @@ export const useRealtimeSession = () => {
     }
   };
 
+  const updateShift = async (personId: string, newShiftTime: '7am' | '8am' | '9am') => {
+    if (!session) return;
+
+    try {
+      // Actualizar el turno de la persona
+      const { error: updateError } = await supabase
+        .from('session_people')
+        .update({ shift_time: newShiftTime })
+        .eq('id', personId);
+
+      if (updateError) throw updateError;
+
+      // Obtener lista actualizada de personas
+      const updatedPeople = people.map(p => 
+        p.id === personId ? { ...p, shift_time: newShiftTime } : p
+      );
+
+      // Ordenar por turno
+      const sortedPeople = updatedPeople.sort((a, b) => {
+        const order = { '7am': 0, '8am': 1, '9am': 2 };
+        return order[a.shift_time] - order[b.shift_time];
+      });
+
+      // Calcular APPs pendientes totales
+      const totalCompleted = sortedPeople.reduce((sum, p) => sum + p.current_progress, 0);
+      const totalPending = session.total_apps - totalCompleted;
+
+      // Redistribuir APPs pendientes: base igual + remainder por orden de turno
+      const baseAPPs = Math.floor(totalPending / sortedPeople.length);
+      const remainder = totalPending % sortedPeople.length;
+
+      for (let i = 0; i < sortedPeople.length; i++) {
+        const person = sortedPeople[i];
+        const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
+        const newTarget = person.current_progress + extraAPPs;
+        
+        await supabase
+          .from('session_people')
+          .update({ assigned_apps: newTarget })
+          .eq('id', person.id);
+      }
+
+      toast({
+        title: "Turno atualizado",
+        description: "APPs foram redistribuídos.",
+      });
+    } catch (error) {
+      console.error('Error updating shift:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o turno.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     session,
     people,
@@ -437,5 +493,6 @@ export const useRealtimeSession = () => {
     addPerson,
     removePerson,
     resetSession,
+    updateShift,
   };
 };

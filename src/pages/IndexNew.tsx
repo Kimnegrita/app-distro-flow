@@ -27,6 +27,7 @@ const IndexNew = () => {
     addPerson,
     removePerson,
     resetSession,
+    updateShift,
   } = useRealtimeSession();
 
   const [view, setView] = useState<"setup" | "tracker">("setup");
@@ -251,13 +252,28 @@ const IndexNew = () => {
                           }`}
                         >
                           <div className="flex justify-between items-center mb-3">
-                            <span
-                              className={`text-lg font-semibold ${
-                                isComplete ? "text-success" : "text-foreground"
-                              }`}
-                            >
-                              {person.name}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-lg font-semibold ${
+                                  isComplete ? "text-success" : "text-foreground"
+                                }`}
+                              >
+                                {person.name}
+                              </span>
+                              <Select 
+                                value={person.shift_time} 
+                                onValueChange={(value: '7am' | '8am' | '9am') => updateShift(person.id, value)}
+                              >
+                                <SelectTrigger className="w-[100px] h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="7am">7:00</SelectItem>
+                                  <SelectItem value="8am">8:00</SelectItem>
+                                  <SelectItem value="9am">9:00</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <div className="flex items-center gap-3">
                               <Button
                                 onClick={() => updateProgress(person.id, Math.max(0, person.current_progress - 1))}
