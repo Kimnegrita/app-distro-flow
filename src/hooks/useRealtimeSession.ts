@@ -143,39 +143,24 @@ export const useRealtimeSession = () => {
 
       if (sessionError) throw sessionError;
 
-      // Distribuir APPs por turnos
-      const peopleByShift = {
-        '7am': peopleData.filter(p => p.shift_time === '7am'),
-        '8am': peopleData.filter(p => p.shift_time === '8am'),
-        '9am': peopleData.filter(p => p.shift_time === '9am'),
-      };
+      // Ordenar personas por turno (7am, 8am, 9am)
+      const sortedPeople = [...peopleData].sort((a, b) => {
+        const order = { '7am': 0, '8am': 1, '9am': 2 };
+        return order[a.shift_time] - order[b.shift_time];
+      });
 
-      const shifts = ['7am', '8am', '9am'] as const;
-      const appsPerShift = Math.floor(totalAPPs / 3);
-      const remainder = totalAPPs % 3;
+      // Distribuir base igual para todos
+      const totalPeople = sortedPeople.length;
+      const baseAPPs = Math.floor(totalAPPs / totalPeople);
+      const remainder = totalAPPs % totalPeople;
 
-      const insertData = [];
-
-      for (let i = 0; i < shifts.length; i++) {
-        const shift = shifts[i];
-        const shiftPeople = peopleByShift[shift];
-        const shiftAPPs = appsPerShift + (i < remainder ? 1 : 0);
-
-        if (shiftPeople.length > 0) {
-          const appsPerPerson = Math.floor(shiftAPPs / shiftPeople.length);
-          const personRemainder = shiftAPPs % shiftPeople.length;
-
-          shiftPeople.forEach((person, index) => {
-            insertData.push({
-              session_id: newSession.id,
-              name: person.name,
-              shift_time: shift,
-              assigned_apps: appsPerPerson + (index < personRemainder ? 1 : 0),
-              current_progress: 0,
-            });
-          });
-        }
-      }
+      const insertData = sortedPeople.map((person, index) => ({
+        session_id: newSession.id,
+        name: person.name,
+        shift_time: person.shift_time,
+        assigned_apps: baseAPPs + (index < remainder ? 1 : 0),
+        current_progress: 0,
+      }));
 
       const { error: peopleError } = await supabase
         .from('session_people')
@@ -233,15 +218,21 @@ export const useRealtimeSession = () => {
 
       if (sessionError) throw sessionError;
 
-      // Redistribuir APPs
-      const totalPeople = people.length;
+      // Ordenar personas por turno
+      const sortedPeople = [...people].sort((a, b) => {
+        const order = { '7am': 0, '8am': 1, '9am': 2 };
+        return order[a.shift_time] - order[b.shift_time];
+      });
+
+      // Redistribuir APPs: base igual + remainder por orden de turno
+      const totalPeople = sortedPeople.length;
       if (totalPeople > 0) {
-        const appsPerPerson = Math.floor(newTotal / totalPeople);
+        const baseAPPs = Math.floor(newTotal / totalPeople);
         const remainder = newTotal % totalPeople;
 
-        for (let i = 0; i < people.length; i++) {
-          const person = people[i];
-          const newTarget = appsPerPerson + (i < remainder ? 1 : 0);
+        for (let i = 0; i < sortedPeople.length; i++) {
+          const person = sortedPeople[i];
+          const newTarget = baseAPPs + (i < remainder ? 1 : 0);
           
           await supabase
             .from('session_people')
@@ -278,26 +269,47 @@ export const useRealtimeSession = () => {
         return;
       }
 
-      // Calcular APPs pendentes
+      // Calcular APPs pendientes totales
       const totalCompleted = people.reduce((sum, p) => sum + p.current_progress, 0);
-      const pendingAPPs = session.total_apps - totalCompleted;
-      const newTotalPeople = people.length + 1;
-      const appsPerPerson = Math.floor(pendingAPPs / newTotalPeople);
-      const remainder = pendingAPPs % newTotalPeople;
+      const totalPending = session.total_apps - totalCompleted;
+      
+      // Crear lista temporal con nueva persona
+      const tempPeople = [...people, { 
+        id: 'temp', 
+        name, 
+        shift_time: shiftTime, 
+        current_progress: 0,
+        assigned_apps: 0 
+      }];
 
-      // Redistribuir APPs entre todos
-      for (let i = 0; i < people.length; i++) {
-        const person = people[i];
-        const newTarget = person.current_progress + appsPerPerson + (i < remainder ? 1 : 0);
-        
-        await supabase
-          .from('session_people')
-          .update({ assigned_apps: newTarget })
-          .eq('id', person.id);
+      // Ordenar por turno
+      const sortedPeople = tempPeople.sort((a, b) => {
+        const order = { '7am': 0, '8am': 1, '9am': 2 };
+        return order[a.shift_time] - order[b.shift_time];
+      });
+
+      // Calcular distribución base + remainder
+      const newTotalPeople = sortedPeople.length;
+      const baseAPPs = Math.floor(totalPending / newTotalPeople);
+      const remainder = totalPending % newTotalPeople;
+
+      // Actualizar personas existentes
+      for (let i = 0; i < sortedPeople.length; i++) {
+        const person = sortedPeople[i];
+        if (person.id !== 'temp') {
+          const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
+          const newTarget = person.current_progress + extraAPPs;
+          
+          await supabase
+            .from('session_people')
+            .update({ assigned_apps: newTarget })
+            .eq('id', person.id);
+        }
       }
 
-      // Agregar nueva persona
-      const newPersonTarget = appsPerPerson + (people.length < remainder ? 1 : 0);
+      // Agregar nueva persona con su asignación
+      const newPersonIndex = sortedPeople.findIndex(p => p.id === 'temp');
+      const newPersonTarget = baseAPPs + (newPersonIndex < remainder ? 1 : 0);
       
       const { error } = await supabase
         .from('session_people')
@@ -338,8 +350,6 @@ export const useRealtimeSession = () => {
     try {
       const personToRemove = people.find(p => p.id === personId);
       if (!personToRemove) return;
-
-      const pendingFromRemoved = Math.max(0, personToRemove.assigned_apps - personToRemove.current_progress);
       
       // Eliminar persona
       const { error: deleteError } = await supabase
@@ -349,17 +359,25 @@ export const useRealtimeSession = () => {
 
       if (deleteError) throw deleteError;
 
-      // Redistribuir APPs pendientes
+      // Redistribuir APPs pendientes entre los restantes
       const remainingPeople = people.filter(p => p.id !== personId);
-      const totalCompleted = remainingPeople.reduce((sum, p) => sum + p.current_progress, 0);
+      
+      // Ordenar por turno
+      const sortedRemaining = remainingPeople.sort((a, b) => {
+        const order = { '7am': 0, '8am': 1, '9am': 2 };
+        return order[a.shift_time] - order[b.shift_time];
+      });
+
+      const totalCompleted = sortedRemaining.reduce((sum, p) => sum + p.current_progress, 0);
       const totalPending = session.total_apps - totalCompleted;
       
-      const appsPerPerson = Math.floor(totalPending / remainingPeople.length);
-      const remainder = totalPending % remainingPeople.length;
+      const baseAPPs = Math.floor(totalPending / sortedRemaining.length);
+      const remainder = totalPending % sortedRemaining.length;
 
-      for (let i = 0; i < remainingPeople.length; i++) {
-        const person = remainingPeople[i];
-        const newTarget = person.current_progress + appsPerPerson + (i < remainder ? 1 : 0);
+      for (let i = 0; i < sortedRemaining.length; i++) {
+        const person = sortedRemaining[i];
+        const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
+        const newTarget = person.current_progress + extraAPPs;
         
         await supabase
           .from('session_people')
