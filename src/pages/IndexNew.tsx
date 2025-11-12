@@ -274,23 +274,23 @@ const IndexNew = () => {
                                   <SelectItem value="9am">9:00</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <div className="flex items-center gap-1 bg-muted/50 rounded px-1">
+                              <div className="flex flex-col gap-0.5 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800 p-0.5">
+                                <Button
+                                  onClick={() => updateAssignedAPPs(person.id, 1)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="w-6 h-5 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
                                 <Button
                                   onClick={() => updateAssignedAPPs(person.id, -1)}
                                   disabled={person.assigned_apps <= person.current_progress}
                                   size="sm"
                                   variant="ghost"
-                                  className="w-6 h-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-30"
+                                  className="w-6 h-5 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-100 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900 disabled:opacity-30"
                                 >
                                   <Minus className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  onClick={() => updateAssignedAPPs(person.id, 1)}
-                                  size="sm"
-                                  variant="ghost"
-                                  className="w-6 h-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-950"
-                                >
-                                  <Plus className="w-3 h-3" />
                                 </Button>
                               </div>
                               <Button
