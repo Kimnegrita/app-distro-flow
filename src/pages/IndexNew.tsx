@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorModal } from "@/components/tracker/ErrorModal";
 import { useRealtimeSession } from "@/hooks/useRealtimeSession";
-import { Plus, RotateCcw, Minus } from "lucide-react";
+import { Plus, RotateCcw, Minus, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -273,6 +273,18 @@ const IndexNew = () => {
                                   <SelectItem value="9am">9:00</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <Button
+                                onClick={() => {
+                                  if (window.confirm(`Tem a certeza de que quer eliminar ${person.name}? Os APPs serão redistribuídos.`)) {
+                                    removePerson(person.id);
+                                  }
+                                }}
+                                size="sm"
+                                variant="ghost"
+                                className="w-7 h-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
                             </div>
                             <div className="flex items-center gap-3">
                               <Button
