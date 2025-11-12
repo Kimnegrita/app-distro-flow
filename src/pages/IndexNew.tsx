@@ -28,6 +28,7 @@ const IndexNew = () => {
     removePerson,
     resetSession,
     updateShift,
+    updateAssignedAPPs,
   } = useRealtimeSession();
 
   const [view, setView] = useState<"setup" | "tracker">("setup");
@@ -273,6 +274,25 @@ const IndexNew = () => {
                                   <SelectItem value="9am">9:00</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <div className="flex items-center gap-1 bg-muted/50 rounded px-1">
+                                <Button
+                                  onClick={() => updateAssignedAPPs(person.id, -1)}
+                                  disabled={person.assigned_apps <= person.current_progress}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="w-6 h-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-30"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  onClick={() => updateAssignedAPPs(person.id, 1)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="w-6 h-6 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
                               <Button
                                 onClick={() => {
                                   if (window.confirm(`Tem a certeza de que quer eliminar ${person.name}? Os APPs serão redistribuídos.`)) {

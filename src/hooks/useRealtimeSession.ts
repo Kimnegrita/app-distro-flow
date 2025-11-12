@@ -483,6 +483,56 @@ export const useRealtimeSession = () => {
     }
   };
 
+  const updateAssignedAPPs = async (personId: string, change: number) => {
+    if (!session) return;
+
+    try {
+      const person = people.find(p => p.id === personId);
+      if (!person) return;
+
+      const newAssigned = person.assigned_apps + change;
+      
+      // No permitir asignación menor al progreso actual
+      if (newAssigned < person.current_progress) {
+        toast({
+          title: "Aviso",
+          description: "Não é possível atribuir menos APPs do que o progresso atual.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Actualizar assigned_apps de la persona
+      const { error: updateError } = await supabase
+        .from('session_people')
+        .update({ assigned_apps: newAssigned })
+        .eq('id', personId);
+
+      if (updateError) throw updateError;
+
+      // Actualizar total de la sesión
+      const newTotal = session.total_apps + change;
+      const { error: sessionError } = await supabase
+        .from('day_sessions')
+        .update({ total_apps: newTotal })
+        .eq('id', session.id);
+
+      if (sessionError) throw sessionError;
+
+      toast({
+        title: "APPs ajustados",
+        description: `${change > 0 ? '+' : ''}${change} APPs para ${person.name}.`,
+      });
+    } catch (error) {
+      console.error('Error updating assigned APPs:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível ajustar APPs.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     session,
     people,
@@ -494,5 +544,6 @@ export const useRealtimeSession = () => {
     removePerson,
     resetSession,
     updateShift,
+    updateAssignedAPPs,
   };
 };
