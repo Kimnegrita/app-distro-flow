@@ -288,7 +288,7 @@ const IndexNew = () => {
                                   onClick={() => updateAssignedAPPs(person.id, 1)}
                                   size="sm"
                                   variant="ghost"
-                                  className="w-6 h-6 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                                  className="w-6 h-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-950"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </Button>
