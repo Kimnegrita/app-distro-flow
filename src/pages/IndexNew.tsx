@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { LoadingView } from "@/components/tracker/LoadingView";
 import { SetupView } from "@/components/tracker/SetupView";
 import { Card } from "@/components/ui/card";
-import { DashboardMetrics } from "@/components/tracker/DashboardMetrics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -126,9 +125,37 @@ const IndexNew = () => {
               </Button>
             </div>
 
-            {/* Dashboard Metrics */}
-            <div className="mb-6">
-              <DashboardMetrics session={session} people={people} />
+            {/* Summary */}
+            <div className="bg-accent rounded-xl p-5 mb-6">
+              <h2 className="text-lg font-semibold text-accent-foreground mb-3 text-center">
+                Resumo do Dia
+              </h2>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <span className="block text-xs text-muted-foreground mb-1">
+                    Total Atribuído
+                  </span>
+                  <span className="text-2xl font-bold text-primary">
+                    {totalTarget}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-xs text-muted-foreground mb-1">
+                    Total Concluído
+                  </span>
+                  <span className="text-2xl font-bold text-success">
+                    {totalDone}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-xs text-muted-foreground mb-1">
+                    Pendente
+                  </span>
+                  <span className="text-2xl font-bold text-destructive">
+                    {totalPending}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Add More APPs */}
