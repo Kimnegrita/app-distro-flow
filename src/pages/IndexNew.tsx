@@ -126,32 +126,32 @@ const IndexNew = () => {
             </div>
 
             {/* Summary */}
-            <div className="bg-accent rounded-xl p-5 mb-6">
-              <h2 className="text-lg font-semibold text-accent-foreground mb-3 text-center">
-                Resumo do Dia
+            <div className="bg-gradient-to-br from-primary/10 to-accent rounded-2xl p-6 mb-6 border border-primary/20">
+              <h2 className="text-xl font-bold text-foreground mb-4 text-center">
+                📊 Resumo do Dia
               </h2>
               <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <span className="block text-xs text-muted-foreground mb-1">
+                <div className="bg-card/50 backdrop-blur rounded-xl p-4 border border-border">
+                  <span className="block text-xs font-medium text-muted-foreground mb-2">
                     Total Atribuído
                   </span>
-                  <span className="text-2xl font-bold text-primary">
+                  <span className="text-3xl font-bold text-primary">
                     {totalTarget}
                   </span>
                 </div>
-                <div>
-                  <span className="block text-xs text-muted-foreground mb-1">
+                <div className="bg-card/50 backdrop-blur rounded-xl p-4 border border-border">
+                  <span className="block text-xs font-medium text-muted-foreground mb-2">
                     Total Concluído
                   </span>
-                  <span className="text-2xl font-bold text-success">
+                  <span className="text-3xl font-bold text-success">
                     {totalDone}
                   </span>
                 </div>
-                <div>
-                  <span className="block text-xs text-muted-foreground mb-1">
+                <div className="bg-card/50 backdrop-blur rounded-xl p-4 border border-border">
+                  <span className="block text-xs font-medium text-muted-foreground mb-2">
                     Pendente
                   </span>
-                  <span className="text-2xl font-bold text-destructive">
+                  <span className="text-3xl font-bold text-warning">
                     {totalPending}
                   </span>
                 </div>
@@ -159,9 +159,9 @@ const IndexNew = () => {
             </div>
 
             {/* Add More APPs */}
-            <div className="bg-muted/50 rounded-xl p-4 mb-4 border border-border">
-              <Label htmlFor="additionalAPPs" className="text-sm font-medium mb-2 block">
-                Adicionar mais APPs à fila
+            <div className="bg-card rounded-xl p-5 mb-4 border border-border shadow-sm">
+              <Label htmlFor="additionalAPPs" className="text-sm font-semibold mb-3 block text-foreground">
+                ➕ Adicionar mais APPs à fila
               </Label>
               <div className="flex gap-2">
                 <Input
@@ -171,11 +171,11 @@ const IndexNew = () => {
                   value={additionalAPPs}
                   onChange={(e) => setAdditionalAPPs(e.target.value)}
                   placeholder="Ex: 20"
-                  className="flex-1"
+                  className="flex-1 border-2 focus:border-primary"
                 />
                 <Button
                   onClick={handleAddAPPs}
-                  className="shrink-0 bg-primary hover:bg-primary/90 gap-2"
+                  className="shrink-0 bg-success hover:bg-success/90 text-success-foreground gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   Adicionar
@@ -184,13 +184,13 @@ const IndexNew = () => {
             </div>
 
             {/* Add Person */}
-            <div className="bg-muted/50 rounded-xl p-4 mb-6 border border-border">
-              <Label className="text-sm font-medium mb-2 block">
-                Adicionar novo participante
+            <div className="bg-card rounded-xl p-5 mb-6 border border-border shadow-sm">
+              <Label className="text-sm font-semibold mb-3 block text-foreground">
+                👤 Adicionar novo participante
               </Label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Select value={newPersonShift} onValueChange={(value: '7am' | '8am' | '9am') => setNewPersonShift(value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-2 focus:border-primary">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -205,7 +205,7 @@ const IndexNew = () => {
                     value={newPersonName}
                     onChange={(e) => setNewPersonName(e.target.value)}
                     placeholder="Nome da pessoa"
-                    className="flex-1"
+                    className="flex-1 border-2 focus:border-primary"
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -215,7 +215,7 @@ const IndexNew = () => {
                   />
                   <Button
                     onClick={handleAddPerson}
-                    className="shrink-0 bg-primary hover:bg-primary/90 gap-2"
+                    className="shrink-0 bg-info hover:bg-info/90 text-info-foreground gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
                   >
                     <Plus className="w-4 h-4" />
                     Adicionar
@@ -226,8 +226,8 @@ const IndexNew = () => {
 
             {/* People List by Shift */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                Progresso por Turno
+              <h3 className="text-base font-bold text-foreground">
+                🎯 Progresso por Turno
               </h3>
               
               {['7am', '8am', '9am'].map((shift) => {
@@ -235,9 +235,9 @@ const IndexNew = () => {
                 if (shiftPeople.length === 0) return null;
 
                 return (
-                  <div key={shift} className="space-y-2">
-                    <h4 className="text-xs font-bold text-primary uppercase bg-primary/10 px-3 py-1 rounded">
-                      Turno {shift}
+                  <div key={shift} className="space-y-3">
+                    <h4 className="text-sm font-bold text-primary uppercase bg-gradient-to-r from-primary/20 to-primary/5 px-4 py-2 rounded-lg border-l-4 border-primary">
+                      ⏰ Turno {shift}
                     </h4>
                     {shiftPeople.map((person) => {
                       const progressPercent = person.assigned_apps > 0 
@@ -248,14 +248,14 @@ const IndexNew = () => {
                       return (
                         <Card
                           key={person.id}
-                          className={`p-4 transition-smooth ${
-                            isComplete ? "bg-success/10 border-success/20" : "bg-card"
+                          className={`p-5 transition-smooth border-2 ${
+                            isComplete ? "bg-success/5 border-success/30 shadow-lg shadow-success/10" : "bg-card border-border shadow-md hover:shadow-lg"
                           }`}
                         >
-                          <div className="flex justify-between items-center mb-3">
-                            <div className="flex items-center gap-2">
+                          <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center gap-3">
                               <span
-                                className={`text-lg font-semibold ${
+                                className={`text-lg font-bold ${
                                   isComplete ? "text-success" : "text-foreground"
                                 }`}
                               >
@@ -265,7 +265,7 @@ const IndexNew = () => {
                                 value={person.shift_time} 
                                 onValueChange={(value: '7am' | '8am' | '9am') => updateShift(person.id, value)}
                               >
-                                <SelectTrigger className="w-[100px] h-7 text-xs">
+                                <SelectTrigger className="w-[100px] h-8 text-xs font-medium border-2">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -274,23 +274,23 @@ const IndexNew = () => {
                                   <SelectItem value="9am">9:00</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <div className="flex flex-col gap-0.5 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800 p-0.5">
+                              <div className="flex flex-col gap-1 bg-gradient-to-b from-info/20 to-warning/20 rounded-lg border-2 border-info/30 p-1 shadow-sm">
                                 <Button
                                   onClick={() => updateAssignedAPPs(person.id, 1)}
                                   size="sm"
                                   variant="ghost"
-                                  className="w-6 h-5 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900"
+                                  className="w-7 h-6 p-0 bg-info/80 hover:bg-info text-info-foreground rounded"
                                 >
-                                  <Plus className="w-3 h-3" />
+                                  <Plus className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
                                   onClick={() => updateAssignedAPPs(person.id, -1)}
                                   disabled={person.assigned_apps <= person.current_progress}
                                   size="sm"
                                   variant="ghost"
-                                  className="w-6 h-5 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-100 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900 disabled:opacity-30"
+                                  className="w-7 h-6 p-0 bg-warning/80 hover:bg-warning text-warning-foreground disabled:opacity-30 rounded"
                                 >
-                                  <Minus className="w-3 h-3" />
+                                  <Minus className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
                               <Button
@@ -301,7 +301,7 @@ const IndexNew = () => {
                                 }}
                                 size="sm"
                                 variant="ghost"
-                                className="w-7 h-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="w-8 h-8 p-0 bg-destructive/10 hover:bg-destructive/20 text-destructive border-2 border-destructive/30 rounded-lg"
                               >
                                 <X className="w-4 h-4" />
                               </Button>
@@ -311,13 +311,12 @@ const IndexNew = () => {
                                 onClick={() => updateProgress(person.id, Math.max(0, person.current_progress - 1))}
                                 disabled={person.current_progress === 0}
                                 size="sm"
-                                variant="outline"
-                                className="w-8 h-8 p-0 rounded-full bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/20 disabled:opacity-30"
+                                className="w-10 h-10 p-0 rounded-full bg-destructive hover:bg-destructive/90 text-destructive-foreground disabled:opacity-30 shadow-md border-2 border-destructive/50"
                               >
-                                <Minus className="w-4 h-4" />
+                                <Minus className="w-5 h-5" />
                               </Button>
                               <span
-                                className={`text-xl font-semibold w-20 text-center ${
+                                className={`text-2xl font-bold w-24 text-center ${
                                   isComplete ? "text-success" : "text-foreground"
                                 }`}
                               >
@@ -327,22 +326,21 @@ const IndexNew = () => {
                                 onClick={() => updateProgress(person.id, Math.min(person.assigned_apps, person.current_progress + 1))}
                                 disabled={isComplete}
                                 size="sm"
-                                variant="outline"
-                                className="w-8 h-8 p-0 rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 disabled:opacity-30"
+                                className="w-10 h-10 p-0 rounded-full bg-success hover:bg-success/90 text-success-foreground disabled:opacity-30 shadow-md border-2 border-success/50"
                               >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-5 h-5" />
                               </Button>
                             </div>
                           </div>
-                          <div className="w-full bg-muted rounded-full h-2.5">
+                          <div className="w-full bg-muted rounded-full h-3 border border-border shadow-inner">
                             <div
-                              className={`h-2.5 rounded-full transition-smooth ${
-                                isComplete ? "bg-success" : "bg-primary"
+                              className={`h-3 rounded-full transition-smooth ${
+                                isComplete ? "bg-gradient-to-r from-success to-success/80" : "bg-gradient-to-r from-primary to-info"
                               }`}
                               style={{ width: `${progressPercent}%` }}
                             />
                           </div>
-                          <div className="mt-1 text-right text-xs text-muted-foreground">
+                          <div className="mt-2 text-right text-sm font-bold text-primary">
                             {Math.round(progressPercent)}%
                           </div>
                         </Card>
