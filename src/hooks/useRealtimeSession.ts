@@ -602,43 +602,75 @@ export const useRealtimeSession = () => {
 
       if (updateError) throw updateError;
 
-      // Si se está despausando, redistribuir APPs
-      if (!newPausedState) {
-        // Filtrar personas activas (no en pausa y cuyo turno no ha terminado)
-        const activePeople = people
-          .map(p => p.id === personId ? { ...p, is_paused: false } : p)
-          .filter(p => !p.is_paused && !hasShiftEnded(p.shift_time));
+      // Si se está PAUSANDO, redistribuir sus APPs pendientes entre los demás
+      if (newPausedState) {
+        const pendingAPPs = person.assigned_apps - person.current_progress;
+        
+        if (pendingAPPs > 0) {
+          // Filtrar personas activas (excluyendo la que se está pausando)
+          const activePeople = people
+            .filter(p => p.id !== personId && !p.is_paused && !hasShiftEnded(p.shift_time))
+            .sort((a, b) => {
+              const order = { '7am': 0, '8am': 1, '9am': 2 } as const;
+              return order[a.shift_time] - order[b.shift_time];
+            });
 
-        // Ordenar por turno
-        const sortedActive = activePeople.sort((a, b) => {
-          const order = { '7am': 0, '8am': 1, '9am': 2 };
-          return order[a.shift_time] - order[b.shift_time];
-        });
+          if (activePeople.length > 0) {
+            const baseAPPs = Math.floor(pendingAPPs / activePeople.length);
+            const remainder = pendingAPPs % activePeople.length;
 
-        // Calcular APPs pendientes totales
-        const totalCompleted = sortedActive.reduce((sum, p) => sum + p.current_progress, 0);
-        const totalPending = session.total_apps - totalCompleted;
+            await Promise.all(activePeople.map((p, i) => {
+              const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
+              const newTarget = p.assigned_apps + extraAPPs;
+              return supabase
+                .from('session_people')
+                .update({ assigned_apps: newTarget })
+                .eq('id', p.id);
+            }));
+          }
 
-        // Redistribuir APPs pendientes
-        const baseAPPs = Math.floor(totalPending / sortedActive.length);
-        const remainder = totalPending % sortedActive.length;
-
-        for (let i = 0; i < sortedActive.length; i++) {
-          const p = sortedActive[i];
-          const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
-          const newTarget = p.current_progress + extraAPPs;
-
+          // Actualizar assigned_apps de la persona pausada a su progreso actual
           await supabase
             .from('session_people')
-            .update({ assigned_apps: newTarget })
-            .eq('id', p.id);
+            .update({ assigned_apps: person.current_progress })
+            .eq('id', personId);
+        }
+      }
+
+      // Si se está DESPAUSANDO, redistribuir todos los APPs pendientes entre todos los activos
+      if (!newPausedState) {
+        // Filtrar personas activas (incluyendo la que se está despausando)
+        const activePeople = people
+          .map(p => p.id === personId ? { ...p, is_paused: false } : p)
+          .filter(p => !p.is_paused && !hasShiftEnded(p.shift_time))
+          .sort((a, b) => {
+            const order = { '7am': 0, '8am': 1, '9am': 2 } as const;
+            return order[a.shift_time] - order[b.shift_time];
+          });
+
+        // Calcular APPs pendientes totales (total_apps - todo lo completado por todos)
+        const totalCompleted = people.reduce((sum, p) => sum + p.current_progress, 0);
+        const totalPending = session.total_apps - totalCompleted;
+
+        if (totalPending > 0 && activePeople.length > 0) {
+          const baseAPPs = Math.floor(totalPending / activePeople.length);
+          const remainder = totalPending % activePeople.length;
+
+          await Promise.all(activePeople.map((p, i) => {
+            const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
+            const newTarget = p.current_progress + extraAPPs;
+            return supabase
+              .from('session_people')
+              .update({ assigned_apps: newTarget })
+              .eq('id', p.id);
+          }));
         }
       }
 
       toast({
         title: newPausedState ? "Pausa ativada" : "Pausa desativada",
         description: newPausedState 
-          ? `${person.name} está em pausa e não receberá APPs.`
+          ? `${person.name} está em pausa. APPs pendentes redistribuídos.`
           : `${person.name} voltou ao trabalho. APPs redistribuídos.`,
       });
     } catch (error) {
