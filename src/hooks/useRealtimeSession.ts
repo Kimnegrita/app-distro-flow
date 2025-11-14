@@ -378,6 +378,9 @@ export const useRealtimeSession = () => {
       const personToRemove = people.find(p => p.id === personId);
       if (!personToRemove) return;
       
+      // Calcular APPs pendientes de la persona a eliminar
+      const pendingAPPs = personToRemove.assigned_apps - personToRemove.current_progress;
+      
       // Eliminar persona
       const { error: deleteError } = await supabase
         .from('session_people')
@@ -386,35 +389,37 @@ export const useRealtimeSession = () => {
 
       if (deleteError) throw deleteError;
 
-      // Redistribuir APPs pendientes entre los restantes que no están en pausa y cuyo turno no ha terminado
-      const remainingPeople = people.filter(p => p.id !== personId && !p.is_paused && !hasShiftEnded(p.shift_time));
-      
-      // Ordenar por turno
-      const sortedRemaining = remainingPeople.sort((a, b) => {
-        const order = { '7am': 0, '8am': 1, '9am': 2 };
-        return order[a.shift_time] - order[b.shift_time];
-      });
-
-      const totalCompleted = sortedRemaining.reduce((sum, p) => sum + p.current_progress, 0);
-      const totalPending = session.total_apps - totalCompleted;
-      
-      const baseAPPs = Math.floor(totalPending / sortedRemaining.length);
-      const remainder = totalPending % sortedRemaining.length;
-
-      for (let i = 0; i < sortedRemaining.length; i++) {
-        const person = sortedRemaining[i];
-        const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
-        const newTarget = person.current_progress + extraAPPs;
+      // Solo redistribuir si hay APPs pendientes
+      if (pendingAPPs > 0) {
+        // Redistribuir APPs pendientes entre los restantes que no están en pausa y cuyo turno no ha terminado
+        const remainingPeople = people.filter(p => p.id !== personId && !p.is_paused && !hasShiftEnded(p.shift_time));
         
-        await supabase
-          .from('session_people')
-          .update({ assigned_apps: newTarget })
-          .eq('id', person.id);
+        if (remainingPeople.length > 0) {
+          // Ordenar por turno
+          const sortedRemaining = remainingPeople.sort((a, b) => {
+            const order = { '7am': 0, '8am': 1, '9am': 2 };
+            return order[a.shift_time] - order[b.shift_time];
+          });
+
+          const baseAPPs = Math.floor(pendingAPPs / sortedRemaining.length);
+          const remainder = pendingAPPs % sortedRemaining.length;
+
+          for (let i = 0; i < sortedRemaining.length; i++) {
+            const person = sortedRemaining[i];
+            const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
+            const newTarget = person.assigned_apps + extraAPPs;
+            
+            await supabase
+              .from('session_people')
+              .update({ assigned_apps: newTarget })
+              .eq('id', person.id);
+          }
+        }
       }
 
       toast({
         title: "Participante removido",
-        description: "APPs foram redistribuídos.",
+        description: pendingAPPs > 0 ? "APPs pendentes foram redistribuídos." : "Participante removido com sucesso.",
       });
     } catch (error) {
       console.error('Error removing person:', error);
