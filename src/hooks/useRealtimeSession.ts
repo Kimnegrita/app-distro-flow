@@ -248,15 +248,16 @@ export const useRealtimeSession = () => {
           return order[a.shift_time] - order[b.shift_time];
         });
 
-      // Redistribuir APPs: base igual + remainder por orden de turno
+      // Distribuir SOLO los APPs adicionales entre las personas activas
       const totalPeople = sortedPeople.length;
       if (totalPeople > 0) {
-        const baseAPPs = Math.floor(newTotal / totalPeople);
-        const remainder = newTotal % totalPeople;
+        const baseAPPs = Math.floor(additionalAPPs / totalPeople);
+        const remainder = additionalAPPs % totalPeople;
 
         for (let i = 0; i < sortedPeople.length; i++) {
           const person = sortedPeople[i];
-          const newTarget = baseAPPs + (i < remainder ? 1 : 0);
+          const additionalForPerson = baseAPPs + (i < remainder ? 1 : 0);
+          const newTarget = person.assigned_apps + additionalForPerson;
           
           await supabase
             .from('session_people')
@@ -267,7 +268,7 @@ export const useRealtimeSession = () => {
 
       toast({
         title: "APPs adicionados!",
-        description: `${additionalAPPs} APPs foram redistribuídos.`,
+        description: `${additionalAPPs} APPs foram distribuídos.`,
       });
     } catch (error) {
       console.error('Error adding APPs:', error);
