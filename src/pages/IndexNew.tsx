@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorModal } from "@/components/tracker/ErrorModal";
 import { useRealtimeSession } from "@/hooks/useRealtimeSession";
-import { Plus, RotateCcw, Minus, X } from "lucide-react";
+import { Plus, RotateCcw, Minus, X, Coffee } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -29,6 +29,7 @@ const IndexNew = () => {
     resetSession,
     updateShift,
     updateAssignedAPPs,
+    togglePause,
   } = useRealtimeSession();
 
   const [view, setView] = useState<"setup" | "tracker">("setup");
@@ -106,7 +107,7 @@ const IndexNew = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-5xl">
         {view === "setup" && <SetupView onStartDay={handleStartDay} onError={showError} />}
         
         {view === "tracker" && session && (
@@ -249,21 +250,35 @@ const IndexNew = () => {
                         <Card
                           key={person.id}
                           className={`p-5 transition-smooth border-2 ${
-                            isComplete ? "bg-success/5 border-success/30 shadow-lg shadow-success/10" : "bg-card border-border shadow-md hover:shadow-lg"
+                            person.is_paused 
+                              ? "bg-muted/50 border-muted-foreground/30 opacity-60" 
+                              : isComplete 
+                                ? "bg-success/5 border-success/30 shadow-lg shadow-success/10" 
+                                : "bg-card border-border shadow-md hover:shadow-lg"
                           }`}
                         >
                           <div className="flex justify-between items-center mb-4">
                             <div className="flex items-center gap-3">
                               <span
                                 className={`text-lg font-bold ${
-                                  isComplete ? "text-success" : "text-foreground"
+                                  person.is_paused 
+                                    ? "text-muted-foreground line-through" 
+                                    : isComplete 
+                                      ? "text-success" 
+                                      : "text-foreground"
                                 }`}
                               >
                                 {person.name}
                               </span>
+                              {person.is_paused && (
+                                <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                                  ☕ Em Pausa
+                                </span>
+                              )}
                               <Select 
                                 value={person.shift_time} 
                                 onValueChange={(value: '7am' | '8am' | '9am') => updateShift(person.id, value)}
+                                disabled={person.is_paused}
                               >
                                 <SelectTrigger className="w-[100px] h-8 text-xs font-medium border-2">
                                   <SelectValue />
@@ -277,15 +292,16 @@ const IndexNew = () => {
                               <div className="flex flex-col gap-1 bg-gradient-to-b from-info/20 to-warning/20 rounded-lg border-2 border-info/30 p-1 shadow-sm">
                                 <Button
                                   onClick={() => updateAssignedAPPs(person.id, 1)}
+                                  disabled={person.is_paused}
                                   size="sm"
                                   variant="ghost"
-                                  className="w-7 h-6 p-0 bg-info/80 hover:bg-info text-info-foreground rounded"
+                                  className="w-7 h-6 p-0 bg-info/80 hover:bg-info text-info-foreground rounded disabled:opacity-30"
                                 >
                                   <Plus className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
                                   onClick={() => updateAssignedAPPs(person.id, -1)}
-                                  disabled={person.assigned_apps <= person.current_progress}
+                                  disabled={person.assigned_apps <= person.current_progress || person.is_paused}
                                   size="sm"
                                   variant="ghost"
                                   className="w-7 h-6 p-0 bg-warning/80 hover:bg-warning text-warning-foreground disabled:opacity-30 rounded"
@@ -293,6 +309,19 @@ const IndexNew = () => {
                                   <Minus className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
+                              <Button
+                                onClick={() => togglePause(person.id)}
+                                size="sm"
+                                variant="ghost"
+                                className={`w-9 h-9 p-0 rounded-lg border-2 transition-all ${
+                                  person.is_paused
+                                    ? "bg-success/20 hover:bg-success/30 text-success border-success/50"
+                                    : "bg-warning/20 hover:bg-warning/30 text-warning border-warning/50"
+                                }`}
+                                title={person.is_paused ? "Retomar trabalho" : "Iniciar pausa"}
+                              >
+                                <Coffee className="w-4 h-4" />
+                              </Button>
                               <Button
                                 onClick={() => {
                                   if (window.confirm(`Tem a certeza de que quer eliminar ${person.name}? Os APPs serão redistribuídos.`)) {
@@ -309,7 +338,7 @@ const IndexNew = () => {
                             <div className="flex items-center gap-3">
                               <Button
                                 onClick={() => updateProgress(person.id, Math.max(0, person.current_progress - 1))}
-                                disabled={person.current_progress === 0}
+                                disabled={person.current_progress === 0 || person.is_paused}
                                 size="sm"
                                 className="w-10 h-10 p-0 rounded-full bg-destructive hover:bg-destructive/90 text-destructive-foreground disabled:opacity-30 shadow-md border-2 border-destructive/50"
                               >
@@ -317,14 +346,18 @@ const IndexNew = () => {
                               </Button>
                               <span
                                 className={`text-2xl font-bold w-24 text-center ${
-                                  isComplete ? "text-success" : "text-foreground"
+                                  person.is_paused
+                                    ? "text-muted-foreground"
+                                    : isComplete 
+                                      ? "text-success" 
+                                      : "text-foreground"
                                 }`}
                               >
                                 {person.current_progress} / {person.assigned_apps}
                               </span>
                               <Button
                                 onClick={() => updateProgress(person.id, Math.min(person.assigned_apps, person.current_progress + 1))}
-                                disabled={isComplete}
+                                disabled={isComplete || person.is_paused}
                                 size="sm"
                                 className="w-10 h-10 p-0 rounded-full bg-success hover:bg-success/90 text-success-foreground disabled:opacity-30 shadow-md border-2 border-success/50"
                               >
@@ -335,7 +368,11 @@ const IndexNew = () => {
                           <div className="w-full bg-muted rounded-full h-3 border border-border shadow-inner">
                             <div
                               className={`h-3 rounded-full transition-smooth ${
-                                isComplete ? "bg-gradient-to-r from-success to-success/80" : "bg-gradient-to-r from-primary to-info"
+                                person.is_paused
+                                  ? "bg-gradient-to-r from-muted-foreground/50 to-muted-foreground/30"
+                                  : isComplete 
+                                    ? "bg-gradient-to-r from-success to-success/80" 
+                                    : "bg-gradient-to-r from-primary to-info"
                               }`}
                               style={{ width: `${progressPercent}%` }}
                             />
