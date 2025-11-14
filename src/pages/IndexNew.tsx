@@ -107,7 +107,7 @@ const IndexNew = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl">
+      <div className="w-full max-w-7xl">
         {view === "setup" && <SetupView onStartDay={handleStartDay} onError={showError} />}
         
         {view === "tracker" && session && (
