@@ -257,13 +257,11 @@ export const useRealtimeSession = () => {
 
       if (sessionError) throw sessionError;
 
-      // Ordenar personas por turno y filtrar las que no están en pausa o cuyo turno ha terminado
+      // Filtrar personas activas y ordenar por cantidad de APPs asignados (de menor a mayor)
+      // para garantizar distribución equitativa
       const sortedPeople = [...people]
         .filter(p => !p.is_paused && !hasShiftEnded(p.shift_time))
-        .sort((a, b) => {
-          const order = { '7am': 0, '8am': 1, '9am': 2 } as const;
-          return order[a.shift_time] - order[b.shift_time];
-        });
+        .sort((a, b) => a.assigned_apps - b.assigned_apps);
 
       // Distribuir SOLO los APPs adicionales entre las personas activas
       const totalPeople = sortedPeople.length;
@@ -327,13 +325,11 @@ export const useRealtimeSession = () => {
         is_paused: false
       }];
 
-      // Ordenar por turno y filtrar las que no están en pausa o cuyo turno ha terminado
+      // Ordenar por cantidad de APPs asignados (de menor a mayor) para distribución equitativa
+      // y filtrar las que no están en pausa o cuyo turno ha terminado
       const sortedPeople = tempPeople
         .filter(p => p.id === 'temp' || (!p.is_paused && !hasShiftEnded(p.shift_time)))
-        .sort((a, b) => {
-          const order = { '7am': 0, '8am': 1, '9am': 2 };
-          return order[a.shift_time] - order[b.shift_time];
-        });
+        .sort((a, b) => a.assigned_apps - b.assigned_apps);
 
       // Calcular distribución base + remainder
       const newTotalPeople = sortedPeople.length;
@@ -415,11 +411,8 @@ export const useRealtimeSession = () => {
         const remainingPeople = people.filter(p => p.id !== personId && !p.is_paused && !hasShiftEnded(p.shift_time));
         
         if (remainingPeople.length > 0) {
-          // Ordenar por turno
-          const sortedRemaining = remainingPeople.sort((a, b) => {
-            const order = { '7am': 0, '8am': 1, '9am': 2 };
-            return order[a.shift_time] - order[b.shift_time];
-          });
+          // Ordenar por cantidad de APPs asignados (de menor a mayor) para distribución equitativa
+          const sortedRemaining = remainingPeople.sort((a, b) => a.assigned_apps - b.assigned_apps);
 
           const baseAPPs = Math.floor(pendingAPPs / sortedRemaining.length);
           const remainder = pendingAPPs % sortedRemaining.length;
@@ -496,11 +489,10 @@ export const useRealtimeSession = () => {
         p.id === personId ? { ...p, shift_time: newShiftTime } : p
       );
 
-      // Ordenar por turno
-      const sortedPeople = updatedPeople.sort((a, b) => {
-        const order = { '7am': 0, '8am': 1, '9am': 2 };
-        return order[a.shift_time] - order[b.shift_time];
-      });
+      // Ordenar por cantidad de APPs asignados (de menor a mayor) para distribución equitativa
+      const sortedPeople = updatedPeople
+        .filter(p => !p.is_paused && !hasShiftEnded(p.shift_time))
+        .sort((a, b) => a.assigned_apps - b.assigned_apps);
 
       // Calcular APPs pendientes totales
       const totalCompleted = sortedPeople.reduce((sum, p) => sum + p.current_progress, 0);
