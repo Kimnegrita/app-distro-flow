@@ -313,11 +313,7 @@ const IndexNew = () => {
                                 onClick={() => togglePause(person.id)}
                                 size="sm"
                                 variant="ghost"
-                                className={`w-9 h-9 p-0 rounded-lg border-2 transition-all ${
-                                  person.is_paused
-                                    ? "bg-success/20 hover:bg-success/30 text-success border-success/50"
-                                    : "bg-warning/20 hover:bg-warning/30 text-warning border-warning/50"
-                                }`}
+                                className="w-9 h-9 p-0 rounded-lg border-2 transition-all bg-purple/20 hover:bg-purple/30 text-purple border-purple/50"
                                 title={person.is_paused ? "Retomar trabalho" : "Iniciar pausa"}
                               >
                                 <Coffee className="w-4 h-4" />
