@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,6 +41,7 @@ export const useRealtimeSession = () => {
   const [people, setPeople] = useState<SessionPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const addingAppsRef = useRef(false);
 
   // Cargar sesión activa al inicio
   useEffect(() => {
@@ -229,8 +230,24 @@ export const useRealtimeSession = () => {
   const addMoreAPPs = async (additionalAPPs: number) => {
     if (!session) return;
 
+    // Evitar dobles clics o llamadas simultáneas
+    if (addingAppsRef.current) {
+      return;
+    }
+    addingAppsRef.current = true;
+
     try {
-      const newTotal = session.total_apps + additionalAPPs;
+      const toAdd = Math.floor(additionalAPPs);
+      if (!Number.isFinite(toAdd) || toAdd <= 0) {
+        toast({
+          title: "Aviso",
+          description: "Quantidade inválida de APPs para adicionar.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const newTotal = session.total_apps + toAdd;
       
       // Atualizar total da sessão
       const { error: sessionError } = await supabase
@@ -244,31 +261,31 @@ export const useRealtimeSession = () => {
       const sortedPeople = [...people]
         .filter(p => !p.is_paused && !hasShiftEnded(p.shift_time))
         .sort((a, b) => {
-          const order = { '7am': 0, '8am': 1, '9am': 2 };
+          const order = { '7am': 0, '8am': 1, '9am': 2 } as const;
           return order[a.shift_time] - order[b.shift_time];
         });
 
       // Distribuir SOLO los APPs adicionales entre las personas activas
       const totalPeople = sortedPeople.length;
       if (totalPeople > 0) {
-        const baseAPPs = Math.floor(additionalAPPs / totalPeople);
-        const remainder = additionalAPPs % totalPeople;
+        const baseAPPs = Math.floor(toAdd / totalPeople);
+        const remainder = toAdd % totalPeople;
 
-        for (let i = 0; i < sortedPeople.length; i++) {
-          const person = sortedPeople[i];
+        // Ejecutar actualizaciones en paralelo para minimizar el tiempo de ventana
+        await Promise.all(sortedPeople.map((person, i) => {
           const additionalForPerson = baseAPPs + (i < remainder ? 1 : 0);
+          if (additionalForPerson === 0) return Promise.resolve();
           const newTarget = person.assigned_apps + additionalForPerson;
-          
-          await supabase
+          return supabase
             .from('session_people')
             .update({ assigned_apps: newTarget })
             .eq('id', person.id);
-        }
+        }));
       }
 
       toast({
         title: "APPs adicionados!",
-        description: `${additionalAPPs} APPs foram distribuídos.`,
+        description: `${toAdd} APPs foram distribuídos.`,
       });
     } catch (error) {
       console.error('Error adding APPs:', error);
@@ -277,6 +294,8 @@ export const useRealtimeSession = () => {
         description: "Não foi possível adicionar APPs.",
         variant: "destructive",
       });
+    } finally {
+      addingAppsRef.current = false;
     }
   };
 
