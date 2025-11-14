@@ -19,6 +19,23 @@ export type DaySession = {
   is_active: boolean;
 };
 
+// Helper function to check if a person's shift has ended
+const hasShiftEnded = (shiftTime: '7am' | '8am' | '9am'): boolean => {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+  // Shift end times in minutes from midnight
+  const shiftEndTimes = {
+    '7am': 16 * 60,  // 4:00 PM (16:00)
+    '8am': 17 * 60,  // 5:00 PM (17:00)
+    '9am': 18 * 60,  // 6:00 PM (18:00)
+  };
+
+  return currentTimeInMinutes >= shiftEndTimes[shiftTime];
+};
+
 export const useRealtimeSession = () => {
   const [session, setSession] = useState<DaySession | null>(null);
   const [people, setPeople] = useState<SessionPerson[]>([]);
@@ -115,7 +132,11 @@ export const useRealtimeSession = () => {
         .order('shift_time', { ascending: true });
 
       if (error) throw error;
-      setPeople((data || []).map(p => ({ ...p, shift_time: p.shift_time as '7am' | '8am' | '9am' })));
+      setPeople((data || []).map(p => ({ 
+        ...p, 
+        shift_time: p.shift_time as '7am' | '8am' | '9am',
+        is_paused: (p as any).is_paused ?? false
+      })));
     } catch (error) {
       console.error('Error loading people:', error);
     }
@@ -219,9 +240,9 @@ export const useRealtimeSession = () => {
 
       if (sessionError) throw sessionError;
 
-      // Ordenar personas por turno y filtrar las que no están en pausa
+      // Ordenar personas por turno y filtrar las que no están en pausa o cuyo turno ha terminado
       const sortedPeople = [...people]
-        .filter(p => !p.is_paused)
+        .filter(p => !p.is_paused && !hasShiftEnded(p.shift_time))
         .sort((a, b) => {
           const order = { '7am': 0, '8am': 1, '9am': 2 };
           return order[a.shift_time] - order[b.shift_time];
@@ -286,9 +307,9 @@ export const useRealtimeSession = () => {
         is_paused: false
       }];
 
-      // Ordenar por turno y filtrar las que no están en pausa
+      // Ordenar por turno y filtrar las que no están en pausa o cuyo turno ha terminado
       const sortedPeople = tempPeople
-        .filter(p => p.id === 'temp' || !p.is_paused)
+        .filter(p => p.id === 'temp' || (!p.is_paused && !hasShiftEnded(p.shift_time)))
         .sort((a, b) => {
           const order = { '7am': 0, '8am': 1, '9am': 2 };
           return order[a.shift_time] - order[b.shift_time];
@@ -365,8 +386,8 @@ export const useRealtimeSession = () => {
 
       if (deleteError) throw deleteError;
 
-      // Redistribuir APPs pendientes entre los restantes que no están en pausa
-      const remainingPeople = people.filter(p => p.id !== personId && !p.is_paused);
+      // Redistribuir APPs pendientes entre los restantes que no están en pausa y cuyo turno no ha terminado
+      const remainingPeople = people.filter(p => p.id !== personId && !p.is_paused && !hasShiftEnded(p.shift_time));
       
       // Ordenar por turno
       const sortedRemaining = remainingPeople.sort((a, b) => {
@@ -551,17 +572,17 @@ export const useRealtimeSession = () => {
       // Actualizar estado de pausa
       const { error: updateError } = await supabase
         .from('session_people')
-        .update({ is_paused: newPausedState })
+        .update({ is_paused: newPausedState } as any)
         .eq('id', personId);
 
       if (updateError) throw updateError;
 
       // Si se está despausando, redistribuir APPs
       if (!newPausedState) {
-        // Filtrar personas activas (no en pausa)
+        // Filtrar personas activas (no en pausa y cuyo turno no ha terminado)
         const activePeople = people
           .map(p => p.id === personId ? { ...p, is_paused: false } : p)
-          .filter(p => !p.is_paused);
+          .filter(p => !p.is_paused && !hasShiftEnded(p.shift_time));
 
         // Ordenar por turno
         const sortedActive = activePeople.sort((a, b) => {
