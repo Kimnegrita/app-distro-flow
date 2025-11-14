@@ -62,7 +62,24 @@ This project is built with:
 
 ## How can I deploy this project?
 
+### Deploy with Lovable
+
 Simply open [Lovable](https://lovable.dev/projects/8dcc6207-db4b-4bfb-8186-6f2505e4e760) and click on Share -> Publish.
+
+### Deploy with Vercel
+
+This project is configured for deployment on Vercel. When you connect your GitHub repository to Vercel:
+
+1. **Automatic Deployments**: Any changes made in Lovable (or pushed to the repository) will automatically trigger a new deployment on Vercel
+2. **Configuration**: The project includes a `vercel.json` file with optimized settings for Vite
+3. **Build Settings**: Vercel will automatically detect the framework and use the correct build command
+
+To deploy on Vercel:
+- Import your repository at [vercel.com/new](https://vercel.com/new)
+- Vercel will auto-detect the settings from `vercel.json`
+- Click "Deploy" and your app will be live in minutes
+
+All changes pushed to your main branch will automatically deploy to production.
 
 ## Can I connect a custom domain to my Lovable project?
 
