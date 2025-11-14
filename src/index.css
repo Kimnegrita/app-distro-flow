@@ -40,6 +40,9 @@ All colors MUST be HSL.
     
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
+    
+    --purple: 270 70% 55%;
+    --purple-foreground: 0 0% 100%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
@@ -99,6 +102,9 @@ All colors MUST be HSL.
     
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
+    
+    --purple: 270 70% 55%;
+    --purple-foreground: 0 0% 100%;
 
     --border: 217 33% 17%;
     --input: 217 33% 17%;
