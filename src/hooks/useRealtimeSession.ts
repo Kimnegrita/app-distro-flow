@@ -8,6 +8,7 @@ export type SessionPerson = {
   shift_time: '7am' | '8am' | '9am';
   assigned_apps: number;
   current_progress: number;
+  is_paused: boolean;
 };
 
 export type DaySession = {
@@ -218,11 +219,13 @@ export const useRealtimeSession = () => {
 
       if (sessionError) throw sessionError;
 
-      // Ordenar personas por turno
-      const sortedPeople = [...people].sort((a, b) => {
-        const order = { '7am': 0, '8am': 1, '9am': 2 };
-        return order[a.shift_time] - order[b.shift_time];
-      });
+      // Ordenar personas por turno y filtrar las que no están en pausa
+      const sortedPeople = [...people]
+        .filter(p => !p.is_paused)
+        .sort((a, b) => {
+          const order = { '7am': 0, '8am': 1, '9am': 2 };
+          return order[a.shift_time] - order[b.shift_time];
+        });
 
       // Redistribuir APPs: base igual + remainder por orden de turno
       const totalPeople = sortedPeople.length;
@@ -274,19 +277,22 @@ export const useRealtimeSession = () => {
       const totalPending = session.total_apps - totalCompleted;
       
       // Crear lista temporal con nueva persona
-      const tempPeople = [...people, { 
+      const tempPeople: SessionPerson[] = [...people, { 
         id: 'temp', 
         name, 
         shift_time: shiftTime, 
         current_progress: 0,
-        assigned_apps: 0 
+        assigned_apps: 0,
+        is_paused: false
       }];
 
-      // Ordenar por turno
-      const sortedPeople = tempPeople.sort((a, b) => {
-        const order = { '7am': 0, '8am': 1, '9am': 2 };
-        return order[a.shift_time] - order[b.shift_time];
-      });
+      // Ordenar por turno y filtrar las que no están en pausa
+      const sortedPeople = tempPeople
+        .filter(p => p.id === 'temp' || !p.is_paused)
+        .sort((a, b) => {
+          const order = { '7am': 0, '8am': 1, '9am': 2 };
+          return order[a.shift_time] - order[b.shift_time];
+        });
 
       // Calcular distribución base + remainder
       const newTotalPeople = sortedPeople.length;
@@ -359,8 +365,8 @@ export const useRealtimeSession = () => {
 
       if (deleteError) throw deleteError;
 
-      // Redistribuir APPs pendientes entre los restantes
-      const remainingPeople = people.filter(p => p.id !== personId);
+      // Redistribuir APPs pendientes entre los restantes que no están en pausa
+      const remainingPeople = people.filter(p => p.id !== personId && !p.is_paused);
       
       // Ordenar por turno
       const sortedRemaining = remainingPeople.sort((a, b) => {
@@ -533,6 +539,72 @@ export const useRealtimeSession = () => {
     }
   };
 
+  const togglePause = async (personId: string) => {
+    if (!session) return;
+
+    try {
+      const person = people.find(p => p.id === personId);
+      if (!person) return;
+
+      const newPausedState = !person.is_paused;
+
+      // Actualizar estado de pausa
+      const { error: updateError } = await supabase
+        .from('session_people')
+        .update({ is_paused: newPausedState })
+        .eq('id', personId);
+
+      if (updateError) throw updateError;
+
+      // Si se está despausando, redistribuir APPs
+      if (!newPausedState) {
+        // Filtrar personas activas (no en pausa)
+        const activePeople = people
+          .map(p => p.id === personId ? { ...p, is_paused: false } : p)
+          .filter(p => !p.is_paused);
+
+        // Ordenar por turno
+        const sortedActive = activePeople.sort((a, b) => {
+          const order = { '7am': 0, '8am': 1, '9am': 2 };
+          return order[a.shift_time] - order[b.shift_time];
+        });
+
+        // Calcular APPs pendientes totales
+        const totalCompleted = sortedActive.reduce((sum, p) => sum + p.current_progress, 0);
+        const totalPending = session.total_apps - totalCompleted;
+
+        // Redistribuir APPs pendientes
+        const baseAPPs = Math.floor(totalPending / sortedActive.length);
+        const remainder = totalPending % sortedActive.length;
+
+        for (let i = 0; i < sortedActive.length; i++) {
+          const p = sortedActive[i];
+          const extraAPPs = baseAPPs + (i < remainder ? 1 : 0);
+          const newTarget = p.current_progress + extraAPPs;
+
+          await supabase
+            .from('session_people')
+            .update({ assigned_apps: newTarget })
+            .eq('id', p.id);
+        }
+      }
+
+      toast({
+        title: newPausedState ? "Pausa ativada" : "Pausa desativada",
+        description: newPausedState 
+          ? `${person.name} está em pausa e não receberá APPs.`
+          : `${person.name} voltou ao trabalho. APPs redistribuídos.`,
+      });
+    } catch (error) {
+      console.error('Error toggling pause:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível alterar o estado de pausa.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     session,
     people,
@@ -545,5 +617,6 @@ export const useRealtimeSession = () => {
     resetSession,
     updateShift,
     updateAssignedAPPs,
+    togglePause,
   };
 };
