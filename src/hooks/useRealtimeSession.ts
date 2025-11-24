@@ -96,7 +96,7 @@ export const useRealtimeSession = () => {
     };
   }, [session?.id]);
 
-  const loadActiveSession = async () => {
+  const loadActiveSession = async (retryCount = 0) => {
     try {
       const { data: sessionData, error: sessionError } = await supabase
         .from('day_sessions')
@@ -114,13 +114,24 @@ export const useRealtimeSession = () => {
       }
     } catch (error) {
       console.error('Error loading session:', error);
+      
+      // Reintentar hasta 3 veces con delay exponencial
+      if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        console.log(`Retrying in ${delay}ms... (attempt ${retryCount + 1}/3)`);
+        setTimeout(() => loadActiveSession(retryCount + 1), delay);
+        return;
+      }
+      
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar a sessão ativa.",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor. Recarregue a página.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (retryCount === 0 || retryCount >= 3) {
+        setLoading(false);
+      }
     }
   };
 
