@@ -26,12 +26,10 @@ const DEFAULT_TEAM_MEMBERS = [
   "Valentina Morales",
   "Kimberly Delgado",
   "Renata Prates",
-  "Alvaro Zanoni",
   "Miguel Afonso",
   "Ana Andresson",
   "Beatriz Batista",
   "Maria Inês Gamas Ferreira",
-  "Rúdi Santos",
   "João Faria"
 ];
 
