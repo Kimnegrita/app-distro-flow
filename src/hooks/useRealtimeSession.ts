@@ -280,22 +280,38 @@ export const useRealtimeSession = () => {
         const baseAPPs = Math.floor(toAdd / totalPeople);
         const remainder = toAdd % totalPeople;
 
+        // Calcular distribución y guardar quiénes reciben APPs
+        const distribution: { name: string; added: number }[] = [];
+        
         // Ejecutar actualizaciones en paralelo para minimizar el tiempo de ventana
         await Promise.all(sortedPeople.map((person, i) => {
           const additionalForPerson = baseAPPs + (i < remainder ? 1 : 0);
           if (additionalForPerson === 0) return Promise.resolve();
+          
+          distribution.push({ name: person.name, added: additionalForPerson });
+          
           const newTarget = person.assigned_apps + additionalForPerson;
           return supabase
             .from('session_people')
             .update({ assigned_apps: newTarget })
             .eq('id', person.id);
         }));
-      }
 
-      toast({
-        title: "APPs adicionados!",
-        description: `${toAdd} APPs foram distribuídos.`,
-      });
+        // Crear mensaje de distribución
+        const distributionMessage = distribution
+          .map(d => `${d.name}: +${d.added}`)
+          .join(' | ');
+
+        toast({
+          title: "APPs adicionados!",
+          description: `${toAdd} APPs distribuídos → ${distributionMessage}`,
+        });
+      } else {
+        toast({
+          title: "APPs adicionados!",
+          description: `${toAdd} APPs adicionados (sem pessoas ativas para distribuir).`,
+        });
+      }
     } catch (error) {
       console.error('Error adding APPs:', error);
       toast({
