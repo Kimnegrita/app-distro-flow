@@ -79,6 +79,7 @@ export type Database = {
           created_at: string
           current_progress: number
           id: string
+          is_paused: boolean
           name: string
           session_id: string
           shift_time: string
@@ -89,6 +90,7 @@ export type Database = {
           created_at?: string
           current_progress?: number
           id?: string
+          is_paused?: boolean
           name: string
           session_id: string
           shift_time: string
@@ -99,6 +101,7 @@ export type Database = {
           created_at?: string
           current_progress?: number
           id?: string
+          is_paused?: boolean
           name?: string
           session_id?: string
           shift_time?: string
