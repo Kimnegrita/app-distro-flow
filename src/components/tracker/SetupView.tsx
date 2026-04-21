@@ -30,7 +30,9 @@ const DEFAULT_TEAM_MEMBERS = [
   "Ana Andresson",
   "Beatriz Batista",
   "Maria Inês Gamas Ferreira",
-  "João Faria"
+  "João Faria",
+  "João Lázaro",
+  "Gastão Guerreiro"
 ];
 
 export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
