@@ -42,7 +42,18 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
   const [peopleList, setPeopleList] = useState<Array<{ name: string; shift_time: '7am' | '8am' | '9am' }>>([]);
   const [teamMembers, setTeamMembers] = useState<string[]>(() => {
     const stored = localStorage.getItem("teamMembers");
-    return stored ? JSON.parse(stored) : DEFAULT_TEAM_MEMBERS;
+    if (!stored) return DEFAULT_TEAM_MEMBERS;
+    try {
+      const parsed: string[] = JSON.parse(stored);
+      // Merge defaults so newly added default members appear even if user has a saved list
+      const merged = [...parsed];
+      DEFAULT_TEAM_MEMBERS.forEach((m) => {
+        if (!merged.includes(m)) merged.push(m);
+      });
+      return merged;
+    } catch {
+      return DEFAULT_TEAM_MEMBERS;
+    }
   });
   const [newMember, setNewMember] = useState<string>("");
   const [showAddMember, setShowAddMember] = useState(false);
@@ -81,7 +92,7 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
     if (!name) return;
     
     if (teamMembers.includes(name)) {
-      onError(`"${name}" já está na lista de membros da equipe.`);
+      onError(`"${name}" já está na lista de membros da equipa.`);
       return;
     }
 
@@ -145,7 +156,7 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-sm font-medium">
-              Membros da Equipe
+              Membros da Equipa
             </Label>
             <Button
               variant="ghost"
@@ -154,7 +165,7 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
               className="h-7 gap-1 text-xs"
             >
               <Users className="w-3 h-3" />
-              Gerenciar Equipe
+              Gerir Equipa
             </Button>
           </div>
 
@@ -205,7 +216,7 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
 
           <Select onValueChange={handleSelectMember}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione um membro da equipe" />
+              <SelectValue placeholder="Selecione um membro da equipa" />
             </SelectTrigger>
             <SelectContent>
               {teamMembers
