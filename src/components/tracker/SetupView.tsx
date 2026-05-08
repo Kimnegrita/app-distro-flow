@@ -37,18 +37,20 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
   const [selectedShift, setSelectedShift] = useState<'7am' | '8am' | '9am'>('7am');
   const [peopleList, setPeopleList] = useState<Array<{ name: string; shift_time: '7am' | '8am' | '9am' }>>([]);
   const [teamMembers, setTeamMembers] = useState<string[]>(() => {
+    const removed: string[] = (() => {
+      try { return JSON.parse(localStorage.getItem("removedDefaults") || "[]"); } catch { return []; }
+    })();
     const stored = localStorage.getItem("teamMembers");
-    if (!stored) return DEFAULT_TEAM_MEMBERS;
+    if (!stored) return DEFAULT_TEAM_MEMBERS.filter((m) => !removed.includes(m));
     try {
       const parsed: string[] = JSON.parse(stored);
-      // Merge defaults so newly added default members appear even if user has a saved list
-      const merged = [...parsed];
+      const merged = parsed.filter((m) => !removed.includes(m));
       DEFAULT_TEAM_MEMBERS.forEach((m) => {
-        if (!merged.includes(m)) merged.push(m);
+        if (!merged.includes(m) && !removed.includes(m)) merged.push(m);
       });
       return merged;
     } catch {
-      return DEFAULT_TEAM_MEMBERS;
+      return DEFAULT_TEAM_MEMBERS.filter((m) => !removed.includes(m));
     }
   });
   const [newMember, setNewMember] = useState<string>("");
@@ -93,6 +95,12 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
     }
 
     setTeamMembers([...teamMembers, name]);
+    try {
+      const removed: string[] = JSON.parse(localStorage.getItem("removedDefaults") || "[]");
+      if (removed.includes(name)) {
+        localStorage.setItem("removedDefaults", JSON.stringify(removed.filter((m) => m !== name)));
+      }
+    } catch {}
     setNewMember("");
     setShowAddMember(false);
   };
@@ -100,6 +108,14 @@ export const SetupView = ({ onStartDay, onError }: SetupViewProps) => {
   const handleRemoveMember = (name: string) => {
     setTeamMembers(teamMembers.filter((m) => m !== name));
     setPeopleList(peopleList.filter((p) => p.name !== name));
+    try {
+      const removed: string[] = JSON.parse(localStorage.getItem("removedDefaults") || "[]");
+      if (!removed.includes(name)) {
+        localStorage.setItem("removedDefaults", JSON.stringify([...removed, name]));
+      }
+    } catch {
+      localStorage.setItem("removedDefaults", JSON.stringify([name]));
+    }
   };
 
   const handleStartDay = () => {
